@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 关键：移动端视口适配 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>经典小游戏</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+        }
+        body{
+            font-family: Microsoft YaHei, sans-serif;
+            background:#f0f2f5;  /* 页面整体背景色 */
+            font-size:16px;
+            margin:0;
+            padding:10px;
+            min-height:100vh;
+        }
+        .container{
+            width:100%;
+            max-width:600px;
+            margin:0 auto;
+            background:#ffffff;
+            padding:18px 14px;
+            border-radius:10px;
+            box-shadow:0 0 8px rgba(0,0,0,0.1);
+        }
+        /* 顶部大标题 文字大小+颜色 */
+        h2{
+            color:#1a202c;       /* 标题字体颜色 */
+            border-bottom:1px solid #eee;
+            padding-bottom:12px;
+            font-size:24px;        /* 标题字号 */
+            font-weight:700;
+            text-align:center;
+        }
+        ul{
+            list-style:none;
+        }
+        li{
+            margin:10px 0;
+        }
+        /* 功能按钮：背景色、文字颜色、字号 */
+        a{
+            display:block;
+            padding:16px 14px;
+            background:#1677ff;     /* 按钮默认背景色 */
+            color:#ffffff;          /* 按钮文字颜色 */
+            text-decoration:none;
+            border-radius:8px;
+            font-size:18px;           /* 按钮文字大小 */
+            transition:0.2s;
+            text-align:center;
+            min-height:50px;
+            line-height:1.4;
+            font-weight:500;
+        }
+        a:hover{
+            background:#CC33FF;     /* 按钮悬浮背景色 */
+        }
+        /* 分类标题：字号、字体色、左侧条、背景 */
+        .category-title{
+            color:#d32f2f;          /* 分类标题文字颜色 */
+            font-size:20px;           /* 分类标题字号 */
+            margin:20px 0 10px;
+            padding:8px 12px;
+            border-left:5px solid #d32f2f; /* 左侧彩色竖线 */
+            font-weight:bold;
+            background:#fff5f5;     /* 分类标题背景色 */
+            border-radius:4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>经典小游戏 & 实用工具</h2>
+
+        <div class="category-title">休闲小游戏</div>
+        <ul>
+            <li><a href="超级俄罗斯.html">超级俄罗斯</a></li>
+            <li><a href="24点_自适应.html">24点_自适应</a></li>
+            <li><a href="暂无.html">开发预留</a></li>
+            <li><a href="扫雷.html">经典扫雷</a></li>
+        </ul>
+
+        <div class="category-title">实用工具</div>
+        <ul>
+            <li><a href="常用色表.html">常用色表</a></li>
+            <li><a href="颜色代码大全.html">颜色代码大全</a></li>
+            <li><a href="进制转换.html">进制转换工具</a></li>
+            <li><a href="单位换算.html">单位换算器</a></li>
+            <li><a href="播放器.html">本地音乐播放器</a></li>
+        </ul>
+
+        <div class="category-title">益智小游戏</div>
+        <ul>
+            <li><a href="数独.html">数独闯关</a></li>
+            <li><a href="拼图.html">趣味拼图</a></li>
+            <li><a href="连连看.html">经典连连看</a></li>
+        </ul>
+    </div>
+</body>
+</html>

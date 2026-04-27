@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>24点 · 智趣连珠</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(135deg, #10131c 0%, #1a1f2e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 12px 8px 20px 8px;
+            font-family: 'Inter', -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* 主容器 */
+        .game-glass {
+            width: 100%;
+            max-width: 420px;
+            min-height: 90vh;
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(2px);
+            border-radius: 30px;
+            box-shadow: 0 18px 35px -12px rgba(0, 0, 0, 0.4), 
+                        inset 0 1px 0 rgba(255,255,255,0.8);
+            overflow: hidden;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 头部区域 */
+        .game-header {
+            padding: 16px 16px 8px 16px;
+            text-align: center;
+            background: rgba(255,255,255,0.5);
+            border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(125deg, #1e3a8a, #6b21a5, #dc2626);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        h1::before {
+            content: "🎯";
+            font-size: 1.4rem;
+            color: #f59e0b;
+        }
+
+        .sub-badge {
+            background: #eef2ff;
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 35px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: #2563eb;
+            margin-top: 8px;
+            backdrop-filter: blur(4px);
+            line-height: 1.3;
+        }
+
+        /* 结果提示区域 - 在上方 */
+        .result-bubble {
+            margin: 12px 12px 8px 12px;
+            padding: 10px 14px;
+            border-radius: 20px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.1s;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            line-height: 1.3;
+        }
+
+        .result-success {
+            background: #dcfce7;
+            color: #166534;
+            box-shadow: 0 0 0 1px #bbf7d0;
+        }
+
+        .result-error {
+            background: #fee2e2;
+            color: #b91c1c;
+            box-shadow: 0 0 0 1px #fecaca;
+        }
+
+        .result-warning {
+            background: #fffbeb;
+            color: #b45309;
+            box-shadow: 0 0 0 1px #fde68a;
+        }
+
+        /* 表达式面板 - 在下方 */
+        .expr-panel {
+            background: #f8fafd;
+            margin: 0 12px 12px 12px;
+            border-radius: 20px;
+            padding: 8px 16px;
+            border: 1px solid #e2edff;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02), 0 2px 6px rgba(0,0,0,0.02);
+            min-height: 70px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .expr-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            color: #5b6e8c;
+            margin-bottom: 4px;
+        }
+
+        .expr-input {
+            width: 100%;
+            font-size: 1.5rem;
+            font-family: 'Fira Mono', 'Courier New', monospace;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            outline: none;
+            text-align: right;
+            color: #0a0f2c;
+            padding: 4px 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* 数字和操作主面板 */
+        .operation-panel {
+            background: #f8fafd;
+            margin: 0 12px 12px 12px;
+            border-radius: 20px;
+            padding: 16px 12px 12px 12px;
+            border: 1px solid #e2edff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        /* 数字卡片区域 */
+        .cards-area {
+            margin-bottom: 16px;
+        }
+
+        .number-grid {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
+        /* 卡片样式 */
+        .digit-card {
+            flex: 1;
+            min-width: 0;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 16px 0;
+            transition: transform 0.1s ease, opacity 0.2s;
+            border: 1px solid rgba(59,130,246,0.3);
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+        }
+        
+        .digit-card:active {
+            transform: scale(0.96);
+        }
+        
+        /* 已用卡片样式 */
+        .digit-card.disabled-card {
+            opacity: 0.5;
+            background: #e9eef3;
+            filter: grayscale(0.2);
+            cursor: not-allowed;
+            box-shadow: none;
+            border-color: #cbd5e1;
+            transform: none;
+            text-decoration: line-through;
+        }
+        
+        .digit-card.disabled-card:active {
+            transform: none;
+        }
+
+        /* 数字字体 */
+        .digit-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(145deg, #0f2b5e, #3b82f6);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            line-height: 1.1;
+        }
+        
+        .disabled-card .digit-value {
+            background: #6c757d;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            opacity: 0.6;
+        }
+
+        /* 运算符按钮区域 - 2x3网格 */
+        .operator-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .grid-btn {
+            border: none;
+            padding: 12px 0;
+            font-size: 1.3rem;
+            font-weight: 700;
+            border-radius: 20px;
+            background: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.05);
+            cursor: pointer;
+            transition: 0.08s linear;
+            font-family: inherit;
+            min-height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grid-btn:active {
+            transform: scale(0.96);
+        }
+
+        /* 运算符样式 */
+        .op-symbol {
+            background: #fff7ed;
+            color: #c2410c;
+            border: 1px solid #ffedd5;
+        }
+
+        /* 功能按钮样式 */
+        .func-btn {
+            background: #eef2ff;
+            color: #1e3a8a;
+            font-size: 0.95rem;
+        }
+
+        /* 验证按钮样式 */
+        .equal-special {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 8px rgba(59,130,246,0.3);
+        }
+
+        /* 换牌按钮样式 */
+        .reset-style {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        /* 答案按钮样式 */
+        .answer-style {
+            background: #f3e8ff;
+            color: #6b21a5;
+        }
+
+        /* 清空按钮样式 */
+        .clear-action {
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 0.95rem;
+        }
+
+        /* 功能按钮行 - 第一行：退格、清空、验证 */
+        .func-row-1 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        /* 功能按钮行 - 第二行：换牌、答案 */
+        .func-row-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        /* 音效控制区域 - 单排 */
+        .sound-dock {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #eef2ff;
+            margin: 0 12px 12px 12px;
+            padding: 8px 12px;
+            border-radius: 35px;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+
+        .sound-toggle {
+            background: #1e293b;
+            border: none;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 8px 16px;
+            border-radius: 35px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            flex: 1;
+            min-height: 40px;
+        }
+
+        .theme-select {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 35px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #0f172a;
+            cursor: pointer;
+            outline: none;
+            font-family: inherit;
+            flex: 1;
+            min-height: 40px;
+        }
+
+        /* 底部说明 */
+        .footer-note {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #7c8ba0;
+            padding: 0 16px 16px 16px;
+            letter-spacing: 0.1px;
+            line-height: 1.3;
+        }
+
+        /* 超小屏幕优化 */
+        @media (max-width: 380px) {
+            .game-glass {
+                border-radius: 25px;
+            }
+            
+            h1 {
+                font-size: 1.4rem;
+            }
+            
+            .sub-badge {
+                font-size: 0.65rem;
+                padding: 4px 10px;
+            }
+            
+            .expr-panel {
+                min-height: 65px;
+                padding: 6px 12px;
+            }
+            
+            .expr-input {
+                font-size: 1.3rem;
+            }
+            
+            .result-bubble {
+                min-height: 45px;
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+            
+            .digit-card {
+                min-height: 70px;
+                border-radius: 18px;
+                padding: 14px 0;
+            }
+            
+            .digit-value {
+                font-size: 2.2rem;
+            }
+            
+            .operator-grid {
+                gap: 6px;
+            }
+            
+            .func-row-1, .func-row-2 {
+                gap: 6px;
+            }
+            
+            .grid-btn {
+                padding: 10px 0;
+                font-size: 1.2rem;
+                min-height: 48px;
+                border-radius: 18px;
+            }
+            
+            .sound-dock {
+                padding: 6px 10px;
+            }
+            
+            .sound-toggle, .theme-select {
+                font-size: 0.75rem;
+                padding: 6px 12px;
+            }
+        }
+
+        /* 横屏保护 - 新增全局缩放 */
+        @media (orientation: landscape) and (max-height: 600px) {
+            body {
+                padding: 8px;
+                align-items: center;
+                /* 关键：确保body可以容纳缩放后的元素 */
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+            }
+            
+            .game-glass {
+                /* 移除原有的 max-width: 350px; 和 max-height: 90vh; */
+                max-width: 95vw; /* 或一个基于视口的较小值，为缩放留出空间 */
+                max-height: 95vh;
+                /* 核心缩放属性 */
+                transform: scale(0.9); /* 初始缩放值，可根据实际效果在0.8-0.95间调整 */
+                transform-origin: center center; /* 确保从中心缩放 */
+                /* 保持原有样式并增加过渡 */
+                border-radius: 25px;
+                min-height: auto;
+                overflow-y: auto;
+                transition: transform 0.2s ease; /* 缩放过渡效果 */
+            }
+            
+            /* 可选：进一步微调横屏下的内部元素，确保在缩放后布局依然舒适 */
+            .digit-card {
+                min-height: 65px; /* 可略微再调小 */
+                padding: 10px 0;
+            }
+            
+            .digit-value {
+                font-size: 1.9rem;
+            }
+            
+            .grid-btn {
+                min-height: 42px;
+                font-size: 1.05rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-glass">
+    <div class="game-header">
+        <h1>24点 · 智趣</h1>
+        <div class="sub-badge">🎲 点击数字 · 先运算符后数字 · 一牌一用</div>
+    </div>
+
+    <!-- 结果提示区域 - 现在在上方 -->
+    <div class="result-bubble" id="resultMsg"></div>
+
+    <!-- 表达式输入区域 - 现在在下方 -->
+    <div class="expr-panel">
+        <div class="expr-label">📐 构建算式</div>
+        <input type="text" class="expr-input" id="exprInput" readonly placeholder="点击数字 & 符号...">
+    </div>
+
+    <!-- 数字和操作主面板 -->
+    <div class="operation-panel">
+        <!-- 数字卡片区域 -->
+        <div class="cards-area">
+            <div class="number-grid" id="numBoard"></div>
+        </div>
+
+        <!-- 运算符按钮区域 - 2x3网格 -->
+        <div class="operator-grid">
+            <button class="grid-btn op-symbol" data-op="+">+</button>
+            <button class="grid-btn op-symbol" data-op="-">-</button>
+            <button class="grid-btn op-symbol" data-op="×">×</button>
+            <button class="grid-btn op-symbol" data-op="÷">÷</button>
+            <button class="grid-btn op-symbol" data-op="(">(</button>
+            <button class="grid-btn op-symbol" data-op=")">)</button>
+        </div>
+
+        <!-- 功能按钮行 - 第一行：退格、清空、验证 -->
+        <div class="func-row-1">
+            <button class="grid-btn func-btn" id="backspaceBtn">⌫ 退格</button>
+            <button class="grid-btn clear-action" id="clearExprBtn">🗑️ 清空</button>
+            <button class="grid-btn equal-special" id="equalBtn">= 验证</button>
+        </div>
+
+        <!-- 功能按钮行 - 第二行：换牌、答案 -->
+        <div class="func-row-2">
+            <button class="grid-btn reset-style" id="refreshBtn">🔄 洗牌</button>
+            <button class="grid-btn answer-style" id="answerBtn">💡 答案</button>
+        </div>
+    </div>
+
+    <!-- 音效控制区域 - 单排 -->
+    <div class="sound-dock">
+        <button id="soundToggleBtn" class="sound-toggle">🔊 音效开</button>
+        <select id="soundThemeSelect" class="theme-select">
+            <option value="classic">🎵 经典</option>
+            <option value="electronic">⚡ 电子</option>
+            <option value="soft">🌸 柔和</option>
+        </select>
+    </div>
+    
+    <div class="footer-note">
+        🃏 必须输入运算符（或左括号）后才能选择下一个数字<br>
+        ✨ 每个数字仅能用一次 · 连续运算符自动拦截
+    </div>
+</div>
+
+<script>
+    // ------------------- 音效模块 -------------------
+    let audioCtx = null;
+    let soundEnabled = true;
+    let currentSoundTheme = 'classic';
+
+    function initAudio() {
+        if (!audioCtx && window.AudioContext) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    }
+    
+    function resumeAudio() {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(e => console.log("audio resume", e));
+        }
+    }
+    
+    function playTone(freq = 800, duration = 0.1, type = 'sine', volume = 0.1) {
+        if (!soundEnabled) return;
+        try {
+            initAudio();
+            if (!audioCtx) return;
+            resumeAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.start();
+            osc.stop(now + duration);
+        } catch(e) {}
+    }
+    
+    function playTap() {
+        if (!soundEnabled) return;
+        switch (currentSoundTheme) {
+            case 'classic': playTone(860, 0.055, 'sine', 0.1); break;
+            case 'electronic': playTone(1320, 0.04, 'square', 0.12); break;
+            case 'soft': playTone(660, 0.09, 'triangle', 0.08); break;
+            default: playTone(800, 0.06, 'sine', 0.1);
+        }
+    }
+    
+    function playSuccess() {
+        if (!soundEnabled) return;
+        switch (currentSoundTheme) {
+            case 'classic': 
+                playTone(1046.5,0.2,'sine',0.12); 
+                setTimeout(()=>playTone(1318.5,0.22,'sine',0.12),80); 
+                break;
+            case 'electronic': 
+                playTone(880,0.08,'square',0.13); 
+                setTimeout(()=>playTone(1108,0.08,'square',0.13),90); 
+                setTimeout(()=>playTone(1320,0.12,'square',0.13),180); 
+                break;
+            default: 
+                playTone(523.25,0.22,'triangle',0.1); 
+                setTimeout(()=>playTone(659.25,0.28,'triangle',0.1),150);
+        }
+    }
+    
+    function playError() {
+        if (!soundEnabled) return;
+        switch (currentSoundTheme) {
+            case 'classic': 
+                playTone(660,0.15,'sine',0.1); 
+                setTimeout(()=>playTone(540,0.2,'sine',0.1),100); 
+                break;
+            case 'electronic': 
+                playTone(440,0.18,'sawtooth',0.12); 
+                setTimeout(()=>playTone(330,0.2,'sawtooth',0.1),100); 
+                break;
+            default: 
+                playTone(480,0.25,'triangle',0.09);
+        }
+    }
+    
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const btn = document.getElementById('soundToggleBtn');
+        if (btn) btn.innerHTML = soundEnabled ? '🔊 音效开' : '🔇 音效关';
+        if (soundEnabled) playTone(820, 0.08, 'sine', 0.09);
+    }
+    
+    function setTheme(theme) {
+        currentSoundTheme = theme;
+        localStorage.setItem('twentyfour_sound_theme', theme);
+        if (soundEnabled) playTone(780, 0.06, 'sine', 0.08);
+    }
+
+    // ------------------- 游戏核心逻辑 -------------------
+    let currentNumbers = [];
+    let usedFlags = [];
+    let exprHistory = [];
+    let currentExpression = "";
+
+    // 判断当前表达式末尾是否允许添加数字
+    function canAddDigitNow(expr) {
+        if (expr.length === 0) return true;
+        const lastChar = expr[expr.length - 1];
+        const ops = ['+', '-', '*', '/', '×', '÷'];
+        const isLastOp = ops.includes(lastChar) || lastChar === '+' || lastChar === '-';
+        const isLastLeftParen = (lastChar === '(');
+        return isLastOp || isLastLeftParen;
+    }
+
+    // 显示提示消息
+    function showWarningMsg(msg) {
+        const resultDiv = document.getElementById('resultMsg');
+        resultDiv.innerHTML = `⚠️ ${msg}`;
+        resultDiv.className = 'result-bubble result-warning';
+    }
+    
+    function showErrorMsg(msg) {
+        const resultDiv = document.getElementById('resultMsg');
+        resultDiv.innerHTML = `❌ ${msg}`;
+        resultDiv.className = 'result-bubble result-error';
+    }
+    
+    function showSuccessMsg(msg) {
+        const resultDiv = document.getElementById('resultMsg');
+        resultDiv.innerHTML = msg;
+        resultDiv.className = 'result-bubble result-success';
+    }
+    
+    function clearResultMsg() {
+        const resultDiv = document.getElementById('resultMsg');
+        resultDiv.innerHTML = '';
+        resultDiv.className = 'result-bubble';
+    }
+
+    // 添加数字 (通过卡片索引)
+    function addNumberFromCard(idx) {
+        if (usedFlags[idx]) {
+            showWarningMsg(`数字 ${currentNumbers[idx]} 已经用过啦！每个数字只能使用一次。`);
+            playError();
+            return false;
+        }
+        
+        if (!canAddDigitNow(currentExpression)) {
+            showWarningMsg(`不能连续选数字！请先输入运算符 ( + - × ÷ ) 或左括号后再选下一个数字。`);
+            playError();
+            return false;
+        }
+        
+        const num = currentNumbers[idx];
+        const numStr = num.toString();
+        const newExpr = currentExpression + numStr;
+        currentExpression = newExpr;
+        document.getElementById('exprInput').value = currentExpression;
+        usedFlags[idx] = true;
+        exprHistory.push({ type: 'num', idx: idx });
+        renderNumbers();
+        clearResultMsg();
+        playTap();
+        return true;
+    }
+
+    // 添加运算符或括号
+    function addOperatorOrBracket(op) {
+        let symbolToAdd = op;
+        let rawOp = op;
+        if (op === '×') rawOp = '*';
+        if (op === '÷') rawOp = '/';
+        
+        if (op === ')') {
+            if (!isCloseBracketValid(currentExpression)) {
+                showWarningMsg("括号不匹配或位置无效，无法添加右括号");
+                playError();
+                return false;
+            }
+            symbolToAdd = ')';
+        } 
+        else if (op === '(') {
+            if (currentExpression.length > 0) {
+                const last = currentExpression[currentExpression.length-1];
+                if (/\d/.test(last) || last === ')') {
+                    showWarningMsg("左括号前不能直接跟数字或右括号");
+                    playError();
+                    return false;
+                }
+            }
+            symbolToAdd = '(';
+        }
+        else {
+            if (!isOperatorValid(op, currentExpression)) {
+                showWarningMsg(`运算符 ${op} 位置不合法 (不能连续运算符/开头为运算符)`);
+                playError();
+                return false;
+            }
+            symbolToAdd = rawOp;
+        }
+        
+        currentExpression += symbolToAdd;
+        document.getElementById('exprInput').value = currentExpression;
+        exprHistory.push({ type: 'op', symbol: op === '×' ? '×' : (op === '÷' ? '÷' : op) });
+        clearResultMsg();
+        playTap();
+        return true;
+    }
+
+    function isOperatorValid(newOp, currentExpr) {
+        if (!currentExpr) return false;
+        const lastChar = currentExpr[currentExpr.length - 1];
+        const opsList = ['+', '-', '*', '/', '×', '÷'];
+        const lastIsOp = opsList.includes(lastChar);
+        if (lastIsOp) return false;
+        if (lastChar === '(') return false;
+        return true;
+    }
+
+    function isCloseBracketValid(currentExpr) {
+        if (!currentExpr) return false;
+        let balance = 0;
+        for (let ch of currentExpr) {
+            if (ch === '(') balance++;
+            if (ch === ')') balance--;
+            if (balance < 0) return false;
+        }
+        if (balance <= 0) return false;
+        const lastChar = currentExpr[currentExpr.length - 1];
+        if (lastChar === '+' || lastChar === '-' || lastChar === '*' || lastChar === '/' || lastChar === '(' || lastChar === '×' || lastChar === '÷') return false;
+        return true;
+    }
+
+    // 退格处理
+    function handleBackspace() {
+        if (currentExpression.length === 0) return;
+        let lastChar = currentExpression[currentExpression.length-1];
+        if (/\d/.test(lastChar)) {
+            let i = currentExpression.length-1;
+            while (i >= 0 && /\d/.test(currentExpression[i])) i--;
+            const removedNumStr = currentExpression.substring(i+1);
+            const removedNum = parseInt(removedNumStr, 10);
+            for (let j = exprHistory.length-1; j >= 0; j--) {
+                const entry = exprHistory[j];
+                if (entry.type === 'num') {
+                    const cardIdx = entry.idx;
+                    if (usedFlags[cardIdx] && currentNumbers[cardIdx] === removedNum) {
+                        usedFlags[cardIdx] = false;
+                        exprHistory.splice(j,1);
+                        break;
+                    }
+                }
+            }
+            currentExpression = currentExpression.substring(0, i+1);
+        } else {
+            currentExpression = currentExpression.slice(0, -1);
+            for (let j = exprHistory.length-1; j >= 0; j--) {
+                const entry = exprHistory[j];
+                if (entry.type === 'op') {
+                    exprHistory.splice(j,1);
+                    break;
+                }
+            }
+        }
+        document.getElementById('exprInput').value = currentExpression;
+        renderNumbers();
+        clearResultMsg();
+        playTap();
+    }
+
+    function clearExpression() {
+        currentExpression = "";
+        document.getElementById('exprInput').value = "";
+        usedFlags.fill(false);
+        exprHistory = [];
+        renderNumbers();
+        clearResultMsg();
+        playTap();
+    }
+
+    // 验证表达式
+    function extractNumbersFromExpr(expr) {
+        const matches = expr.match(/\d+/g);
+        return matches ? matches.map(Number) : [];
+    }
+
+    function isExactlyUsed(exprNumbers) {
+        if (exprNumbers.length !== currentNumbers.length) return false;
+        const exprFreq = new Map();
+        const originalFreq = new Map();
+        for (let n of exprNumbers) exprFreq.set(n, (exprFreq.get(n) || 0) + 1);
+        for (let n of currentNumbers) originalFreq.set(n, (originalFreq.get(n) || 0) + 1);
+        if (exprFreq.size !== originalFreq.size) return false;
+        for (let [k,v] of originalFreq) {
+            if (exprFreq.get(k) !== v) return false;
+        }
+        return true;
+    }
+
+    // 安全计算函数 - 增加运算过程检查
+    function safeCalc(expr) {
+        const clean = expr.replace(/\s/g, '').replace(/×/g, '*').replace(/÷/g, '/');
+        if (!/^[\d+\-*/()]+$/.test(clean)) throw new Error('invalid');
+        
+        // 使用栈计算表达式，并检查每一步
+        const tokens = [];
+        let numBuffer = '';
+        
+        // 将表达式转换为token数组
+        for (let i = 0; i < clean.length; i++) {
+            const ch = clean[i];
+            if (ch >= '0' && ch <= '9') {
+                numBuffer += ch;
+            } else {
+                if (numBuffer) {
+                    tokens.push(parseInt(numBuffer, 10));
+                    numBuffer = '';
+                }
+                tokens.push(ch);
+            }
+        }
+        if (numBuffer) {
+            tokens.push(parseInt(numBuffer, 10));
+        }
+        
+        // 使用两个栈：操作数栈和运算符栈
+        const opStack = [];
+        const numStack = [];
+        
+        // 运算符优先级
+        const precedence = {
+            '+': 1,
+            '-': 1,
+            '*': 2,
+            '/': 2
+        };
+        
+        // 执行计算
+        function applyOperator(op, b, a) {
+            switch (op) {
+                case '+':
+                    return a + b;
+                case '-':
+                    const result = a - b;
+                    if (result < 0) throw new Error('negative');
+                    return result;
+                case '*':
+                    return a * b;
+                case '/':
+                    if (b === 0) throw new Error('division by zero');
+                    if (a % b !== 0) throw new Error('decimal');
+                    return a / b;
+                default:
+                    throw new Error('invalid operator');
+            }
+        }
+        
+        for (let token of tokens) {
+            if (typeof token === 'number') {
+                numStack.push(token);
+            } else if (token === '(') {
+                opStack.push(token);
+            } else if (token === ')') {
+                while (opStack.length && opStack[opStack.length - 1] !== '(') {
+                    const op = opStack.pop();
+                    const b = numStack.pop();
+                    const a = numStack.pop();
+                    if (a === undefined || b === undefined) throw new Error('invalid expression');
+                    numStack.push(applyOperator(op, b, a));
+                }
+                opStack.pop(); // 弹出 '('
+            } else {
+                while (opStack.length && 
+                       opStack[opStack.length - 1] !== '(' &&
+                       precedence[opStack[opStack.length - 1]] >= precedence[token]) {
+                    const op = opStack.pop();
+                    const b = numStack.pop();
+                    const a = numStack.pop();
+                    if (a === undefined || b === undefined) throw new Error('invalid expression');
+                    numStack.push(applyOperator(op, b, a));
+                }
+                opStack.push(token);
+            }
+        }
+        
+        // 处理剩余的运算符
+        while (opStack.length) {
+            const op = opStack.pop();
+            const b = numStack.pop();
+            const a = numStack.pop();
+            if (a === undefined || b === undefined) throw new Error('invalid expression');
+            numStack.push(applyOperator(op, b, a));
+        }
+        
+        if (numStack.length !== 1) throw new Error('invalid expression');
+        return numStack[0];
+    }
+
+    function verifyExpression() {
+        const expr = currentExpression;
+        if (!expr.trim()) {
+            showErrorMsg("请先构建算式");
+            playError();
+            return;
+        }
+        const exprNumbers = extractNumbersFromExpr(expr);
+        if (!isExactlyUsed(exprNumbers)) {
+            showErrorMsg("必须恰好使用当前四张牌各一次！");
+            playError();
+            return;
+        }
+        let val;
+        try {
+            val = safeCalc(expr);
+        } catch(e) {
+            if (e.message === 'negative') {
+                showErrorMsg("运算过程中出现负数，请重新构建算式");
+            } else if (e.message === 'decimal') {
+                showErrorMsg("运算过程中出现小数，请重新构建算式");
+            } else if (e.message === 'division by zero') {
+                showErrorMsg("不能除以零");
+            } else {
+                showErrorMsg("算式格式错误，请检查括号或运算符");
+            }
+            playError();
+            return;
+        }
+        if (Math.abs(val - 24) < 1e-8) {
+            showSuccessMsg("🎉 完美！ 等于24！ 🎉");
+            playSuccess();
+        } else {
+            showErrorMsg(`结果 = ${Number(val).toFixed(4)}，不是24，再试试~`);
+            playError();
+        }
+    }
+
+    // 有解生成器 - 只生成运算过程禁止小数和负数的解
+    function findAllAnswers(nums) {
+        const ops = ['+','-','*','/'];
+        const patterns = [
+            "(({0}{4}{1}){5}{2}){6}{3}",
+            "({0}{4}({1}{5}{2})){6}{3}",
+            "{0}{4}(({1}{5}{2}){6}{3})",
+            "{0}{4}({1}{5}({2}{6}{3}))",
+            "({0}{4}{1}){5}({2}{6}{3})"
+        ];
+        
+        function permuteUnique(arr) {
+            if (arr.length === 1) return [arr];
+            let res = [];
+            for (let i=0; i<arr.length; i++) {
+                let rest = [...arr.slice(0,i), ...arr.slice(i+1)];
+                for (let p of permuteUnique(rest)) res.push([arr[i], ...p]);
+            }
+            const uniq = new Map();
+            for (let p of res) { 
+                let key = p.join(','); 
+                if (!uniq.has(key)) uniq.set(key,p); 
+            }
+            return Array.from(uniq.values());
+        }
+        
+        const perms = permuteUnique(nums);
+        const solutions = new Set();
+        
+        for (let p of perms) {
+            for (let o1 of ops) for (let o2 of ops) for (let o3 of ops) {
+                for (let pat of patterns) {
+                    let expr = pat.replace('{0}',p[0])
+                                  .replace('{1}',p[1])
+                                  .replace('{2}',p[2])
+                                  .replace('{3}',p[3])
+                                  .replace('{4}',o1)
+                                  .replace('{5}',o2)
+                                  .replace('{6}',o3);
+                    try {
+                        if (Math.abs(safeCalc(expr)-24) < 1e-8) solutions.add(expr);
+                    } catch(e) {
+                        // 忽略运算过程中出现小数或负数的解
+                    }
+                }
+            }
+        }
+        return Array.from(solutions);
+    }
+    
+    function hasSolution(nums) {
+        return findAllAnswers(nums).length > 0;
+    }
+    
+    function generateSolvableNumbers() {
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const arr = [];
+            for (let i=0;i<4;i++) arr.push(Math.floor(Math.random()*13)+1);
+            if (hasSolution(arr)) return arr;
+        }
+        // 如果50次尝试都找不到，返回一个已知有解的数组
+        return [3,3,8,8]; // 3×8×(3-3/3) 但注意这个有除法，我们返回一个更简单的
+    }
+
+    function refreshNumbers() {
+        const newNums = generateSolvableNumbers();
+        currentNumbers = [...newNums];
+        usedFlags = new Array(4).fill(false);
+        currentExpression = "";
+        exprHistory = [];
+        document.getElementById('exprInput').value = "";
+        clearResultMsg();
+        renderNumbers();
+        playTap();
+    }
+
+    function showAnswer() {
+        const solutions = findAllAnswers(currentNumbers);
+        if (solutions.length === 0) {
+            showErrorMsg("当前牌组无解（在禁止小数和负数的规则下），自动换牌");
+            refreshNumbers();
+            return;
+        }
+        const answerExprRaw = solutions[0];
+        const prettyExpr = answerExprRaw.replace(/\*/g, '×').replace(/\//g, '÷');
+        currentExpression = prettyExpr;
+        document.getElementById('exprInput').value = currentExpression;
+        const exprNums = extractNumbersFromExpr(prettyExpr);
+        const tempUsed = new Array(4).fill(false);
+        for (let num of exprNums) {
+            let matched = false;
+            for (let i=0; i<currentNumbers.length; i++) {
+                if (!tempUsed[i] && currentNumbers[i] === num) {
+                    tempUsed[i] = true;
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) break;
+        }
+        for (let i=0; i<4; i++) usedFlags[i] = tempUsed[i];
+        exprHistory = [];
+        renderNumbers();
+        showSuccessMsg(`✨ 参考答案已填入： ${prettyExpr} = 24 ✨`);
+        playTap();
+    }
+
+    // 渲染数字卡片
+    function renderNumbers() {
+        const board = document.getElementById('numBoard');
+        if (!board) return;
+        board.innerHTML = '';
+        for (let i=0; i<currentNumbers.length; i++) {
+            const num = currentNumbers[i];
+            const used = usedFlags[i];
+            const card = document.createElement('div');
+            card.className = `digit-card ${used ? 'disabled-card' : ''}`;
+            card.innerHTML = `<div class="digit-value">${num}</div>`;
+            if (!used) {
+                card.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    addNumberFromCard(i);
+                });
+            } else {
+                card.style.cursor = 'not-allowed';
+            }
+            board.appendChild(card);
+        }
+    }
+
+    // 绑定UI事件
+    function bindUI() {
+        // 运算符按钮
+        document.querySelectorAll('.op-symbol').forEach(btn => {
+            btn.removeEventListener('click', opClick);
+            btn.addEventListener('click', opClick);
+        });
+        
+        // 功能按钮
+        document.getElementById('backspaceBtn').onclick = () => { 
+            handleBackspace(); 
+            resumeAudio(); 
+        };
+        document.getElementById('equalBtn').onclick = () => { 
+            verifyExpression(); 
+            resumeAudio(); 
+        };
+        document.getElementById('refreshBtn').onclick = () => { 
+            refreshNumbers(); 
+            resumeAudio(); 
+        };
+        document.getElementById('answerBtn').onclick = () => { 
+            showAnswer(); 
+            resumeAudio(); 
+        };
+        document.getElementById('clearExprBtn').onclick = () => { 
+            clearExpression(); 
+            resumeAudio(); 
+        };
+        
+        // 音效控制
+        const soundToggle = document.getElementById('soundToggleBtn');
+        const themeSelect = document.getElementById('soundThemeSelect');
+        
+        if (soundToggle) {
+            soundToggle.onclick = () => { 
+                toggleSound(); 
+                resumeAudio(); 
+            };
+        }
+        
+        if (themeSelect) {
+            themeSelect.onchange = (e) => { 
+                setTheme(e.target.value); 
+                resumeAudio(); 
+            };
+            const saved = localStorage.getItem('twentyfour_sound_theme');
+            if (saved && ['classic','electronic','soft'].includes(saved)) {
+                themeSelect.value = saved;
+                currentSoundTheme = saved;
+            } else {
+                themeSelect.value = 'classic';
+                currentSoundTheme = 'classic';
+            }
+        }
+    }
+    
+    function opClick(e) {
+        const op = e.currentTarget.getAttribute('data-op');
+        if (op) { 
+            addOperatorOrBracket(op); 
+            resumeAudio(); 
+        }
+    }
+
+    // 初始化游戏
+    function init() {
+        refreshNumbers();
+        bindUI();
+        
+        const wakeAudio = () => { 
+            resumeAudio(); 
+            document.body.removeEventListener('click', wakeAudio); 
+            document.body.removeEventListener('touchstart', wakeAudio); 
+        };
+        document.body.addEventListener('click', wakeAudio);
+        document.body.addEventListener('touchstart', wakeAudio);
+        
+        const toggleBtn = document.getElementById('soundToggleBtn');
+        if (toggleBtn) toggleBtn.innerHTML = soundEnabled ? '🔊 音效开' : '🔇 音效关';
+    }
+    
+    window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

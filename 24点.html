@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>24点挑战</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1a2a3a 0%, #0f1a24 100%);
+            font-family: 'Segoe UI', 'Poppins', 'Roboto', 'Noto Sans', system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .game-container {
+            max-width: 620px;
+            width: 100%;
+            background: rgba(22, 34, 48, 0.7);
+            backdrop-filter: blur(2px);
+            border-radius: 64px 48px 64px 48px;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            padding: 24px 20px 32px;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .game-header {
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+        }
+        h1 {
+            font-size: 2.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #FFE6B0, #FFB347);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .sub {
+            color: #aac8e0;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.3);
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 40px;
+            margin-top: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .cards-area {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+            margin: 20px 0 24px;
+            padding: 0 4px;
+        }
+        .card {
+            background: radial-gradient(ellipse at 30% 25%, #fff7e8, #ffe3b5);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 3 / 4;
+            box-shadow: 0 12px 18px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.8);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+        .card:active {
+            transform: scale(0.96);
+        }
+        .card-value {
+            font-size: clamp(2rem, 8vw, 3.8rem);
+            font-weight: 800;
+            color: #c25b1c;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
+            font-family: monospace;
+            line-height: 1;
+        }
+        .card-suit {
+            font-size: clamp(1.2rem, 5vw, 1.9rem);
+            color: #e05a2a;
+            opacity: 0.7;
+            margin-top: 4px;
+        }
+
+        /* 已选数字加删除线 */
+        .card.used .card-value {
+            text-decoration: line-through;
+            text-decoration-color: #c25b1c;
+            text-decoration-thickness: 3px;
+            opacity: 0.5;
+        }
+        .card.used {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        @media (max-width: 500px) {
+            .cards-area { gap: 10px; }
+            .card { border-radius: 16px; }
+        }
+        .expression-area {
+            margin: 12px 0 18px;
+        }
+        .expr-input-wrapper {
+            background: #0b1219;
+            border-radius: 60px;
+            border: 1px solid #ffb34780;
+            display: flex;
+            align-items: center;
+            padding: 4px 20px;
+            transition: all 0.2s;
+        }
+        .expr-input-wrapper:focus-within {
+            border-color: #ffb347;
+            box-shadow: 0 0 0 3px #ffb34740;
+        }
+        #expressionInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 16px 8px;
+            font-size: 1.2rem;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            font-weight: 500;
+            color: #f3e7c9;
+            outline: none;
+            letter-spacing: 0.5px;
+            cursor: text;
+        }
+        #expressionInput:read-only {
+            background-color: transparent;
+            color: #f3e7c9;
+        }
+        #expressionInput::placeholder {
+            color: #5f7f9a;
+            font-size: 0.9rem;
+        }
+        .keypad {
+            background: rgba(10, 20, 28, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 48px;
+            padding: 18px 16px;
+            margin: 12px 0 18px;
+            border: 1px solid rgba(255, 180, 71, 0.25);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        .key-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .key-btn {
+            background: linear-gradient(135deg, #253c4c, #172d3a);
+            border: none;
+            color: #ffefcf;
+            font-size: 1.5rem;
+            font-weight: 700;
+            padding: 14px 0;
+            border-radius: 32px;
+            cursor: pointer;
+            transition: all 0.12s linear;
+            box-shadow: 0 5px 0 #0a1219;
+            font-family: 'Segoe UI', 'Fira Code', monospace;
+            letter-spacing: 1px;
+            text-align: center;
+            backdrop-filter: blur(2px);
+        }
+        .key-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 0 #0a1219;
+        }
+        .key-btn.operator {
+            background: linear-gradient(135deg, #3e5f6e, #2c4657);
+            color: #ffda99;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+        .key-btn.bracket {
+            background: linear-gradient(135deg, #2f6b5a, #1f4e41);
+            color: #eafff0;
+            font-size: 1.6rem;
+            font-weight: 800;
+        }
+        .key-btn.special {
+            background: linear-gradient(135deg, #7a4c2c, #5e3a1f);
+            color: #ffefcf;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        @media (max-width: 520px) {
+            .key-grid { gap: 10px; }
+            .key-btn { padding: 12px 0; font-size: 1.3rem; }
+            .key-btn.operator { font-size: 1.6rem; }
+            .key-btn.bracket { font-size: 1.4rem; }
+            .key-btn.special { font-size: 1.1rem; }
+        }
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 10px 0 12px;
+        }
+        .action-btn {
+            background: linear-gradient(120deg, #2c3e4e, #1e2f3a);
+            border: none;
+            padding: 12px 0;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #f0e6d2;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: 0 5px 0 #0f171f;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .action-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #0f171f;
+        }
+        .action-btn.primary {
+            background: linear-gradient(120deg, #ff9f3d, #ff7a1c);
+            color: white;
+            text-shadow: 0 1px 0 #a04000;
+        }
+        .action-btn.hint {
+            background: linear-gradient(120deg, #3f6b4c, #2d533a);
+        }
+        .action-btn.sound {
+            background: linear-gradient(120deg, #5a4c3c, #4a3c2c);
+        }
+        @media (max-width: 560px) {
+            .action-btn {
+                font-size: 0.75rem;
+                padding: 10px 0;
+                gap: 4px;
+            }
+        }
+        .message-area {
+            background: #030c11aa;
+            border-radius: 28px;
+            padding: 14px 18px;
+            margin-top: 18px;
+            min-height: 70px;
+            font-size: 0.9rem;
+            color: #e7f2fa;
+            word-break: break-word;
+            border-left: 4px solid #ffb347;
+            transition: opacity 0.2s;
+        }
+        .success-msg {
+            color: #b9f6ca;
+            text-shadow: 0 0 3px #0f0;
+        }
+        .error-msg {
+            color: #ffb0a0;
+        }
+        .hint-msg {
+            color: #ffe0a3;
+            font-family: monospace;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #5c7993;
+        }
+        .sound-activate-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            cursor: pointer;
+            font-family: system-ui;
+        }
+        .sound-activate-card {
+            background: #1e2f3a;
+            padding: 28px 32px;
+            border-radius: 56px;
+            text-align: center;
+            color: #ffdeae;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+            border: 1px solid #ffb347;
+            max-width: 280px;
+        }
+        .sound-activate-card h3 {
+            font-size: 1.6rem;
+            margin-bottom: 12px;
+        }
+        .sound-activate-card p {
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+        .sound-activate-card .big-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <div class="game-header">
+        <h1>2 4 点 · 挑 战</h1>
+    </div>
+    <div class="cards-area" id="cardsArea"></div>
+    <div class="expression-area">
+        <div class="expr-input-wrapper">
+            <input type="text" id="expressionInput" 
+                   placeholder="点击数字牌，再点运算符… 例: (6-2)×(3+3)" 
+                   autocomplete="off" spellcheck="false"
+                   readonly inputmode="none">
+        </div>
+    </div>
+    <div class="keypad" id="keypad"></div>
+    <div class="action-buttons">
+        <button class="action-btn" id="checkBtn">✅ 验 证</button>
+        <button class="action-btn primary" id="newGameBtn">🎲 新一局</button>
+        <button class="action-btn hint" id="hintBtn">💡 提 示</button>
+        <button class="action-btn sound" id="soundToggleBtn">🔊 音效</button>
+    </div>
+    <div class="message-area" id="messageArea">
+        ✨ 点击数字牌，用完无法再点；禁止连续点击数字（需运算符分隔）。
+    </div>
+    <footer>✔ 支持括号 & 四则运算 | 每个数字仅用一次 | 数字之间必须用运算符</footer>
+</div>
+<div id="soundOverlay" class="sound-activate-overlay">
+    <div class="sound-activate-card">
+        <div class="big-icon">🔊</div>
+        <h3>开启音效体验</h3>
+        <p>点击任意位置激活按键音效</p>
+        <p style="font-size:0.8rem; margin-top:12px;">(浏览器安全策略需手动交互)</p>
+    </div>
+</div>
+<script>
+    class SoundManager {
+        constructor() {
+            this.audioCtx = null;
+            this.isEnabled = false;
+            this.soundEffectsEnabled = true;
+        }
+        initAudio() {
+            if (this.audioCtx) return this.audioCtx;
+            try {
+                this.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                return this.audioCtx;
+            } catch(e) { return null; }
+        }
+        _playTone(freq, duration, volume = 0.08, type = 'sine') {
+            const ctx = this.audioCtx;
+            if (!ctx || !this.isEnabled || !this.soundEffectsEnabled) return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = type;
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(volume, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.start();
+            osc.stop(now + duration);
+        }
+        playDigitSound() { this._playTone(523.25, 0.08, 0.07, 'sine'); }
+        playOperatorSound() { this._playTone(392.00, 0.1, 0.09, 'triangle'); }
+        playBracketSound() { this._playTone(659.25, 0.07, 0.08, 'sine'); }
+        playBackspaceSound() {
+            const ctx = this.audioCtx;
+            if (!ctx || !this.isEnabled || !this.soundEffectsEnabled) return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.exponentialRampToValueAtTime(220, now + 0.08);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+            osc.start();
+            osc.stop(now + 0.12);
+        }
+        playClearSound() {
+            const ctx = this.audioCtx;
+            if (!ctx || !this.isEnabled || !this.soundEffectsEnabled) return;
+            const now = ctx.currentTime;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.15);
+            osc.start();
+            osc.stop(now + 0.15);
+        }
+        playSuccessSound() {
+            if (!this.isEnabled || !this.soundEffectsEnabled) return;
+            const ctx = this.audioCtx;
+            if (!ctx) return;
+            const now = ctx.currentTime;
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.frequency.value = 523.25;
+            gain1.gain.setValueAtTime(0.2, now);
+            gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+            osc1.start();
+            osc1.stop(now + 0.5);
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.frequency.value = 659.25;
+            gain2.gain.setValueAtTime(0.2, now + 0.1);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+            osc2.start(now + 0.1);
+            osc2.stop(now + 0.6);
+            const osc3 = ctx.createOscillator();
+            const gain3 = ctx.createGain();
+            osc3.connect(gain3);
+            gain3.connect(ctx.destination);
+            osc3.frequency.value = 783.99;
+            gain3.gain.setValueAtTime(0.2, now + 0.25);
+            gain3.gain.exponentialRampToValueAtTime(0.0001, now + 0.7);
+            osc3.start(now + 0.25);
+            osc3.stop(now + 0.7);
+        }
+        playForbiddenSound() { this._playTone(220, 0.2, 0.12, 'sawtooth'); }
+        async activate() {
+            if (this.isEnabled) return true;
+            const ctx = this.initAudio();
+            if (!ctx) return false;
+            try {
+                if (ctx.state === 'suspended') await ctx.resume();
+                this.isEnabled = true;
+                this._playTone(660, 0.15, 0.1, 'sine');
+                return true;
+            } catch(e) { return false; }
+        }
+        toggleSoundEffects() {
+            this.soundEffectsEnabled = !this.soundEffectsEnabled;
+            return this.soundEffectsEnabled;
+        }
+        getSoundEffectsState() { return this.soundEffectsEnabled; }
+    }
+    const soundManager = new SoundManager();
+    let currentNumbers = [];
+    let hintExpression = null;
+    const cardsArea = document.getElementById('cardsArea');
+    const expressionInput = document.getElementById('expressionInput');
+    const checkBtn = document.getElementById('checkBtn');
+    const newGameBtn = document.getElementById('newGameBtn');
+    const hintBtn = document.getElementById('hintBtn');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const messageDiv = document.getElementById('messageArea');
+    const keypadContainer = document.getElementById('keypad');
+    const soundOverlay = document.getElementById('soundOverlay');
+    let tempMsgTimeout = null;
+
+    function showMessage(msg, isError = false, isSuccess = false, isHint = false, isTemp = false) {
+        if (tempMsgTimeout) clearTimeout(tempMsgTimeout);
+        messageDiv.innerHTML = msg;
+        messageDiv.classList.remove('success-msg', 'error-msg', 'hint-msg');
+        if (isSuccess) messageDiv.classList.add('success-msg');
+        else if (isError) messageDiv.classList.add('error-msg');
+        else if (isHint) messageDiv.classList.add('hint-msg');
+        if (isTemp) {
+            tempMsgTimeout = setTimeout(() => {
+                if (messageDiv.innerHTML === msg) {
+                    messageDiv.innerHTML = "✨ 继续构造算式，每个数字只能使用一次，数字之间需要运算符。";
+                    messageDiv.classList.remove('error-msg', 'success-msg', 'hint-msg');
+                }
+            }, 2000);
+        }
+    }
+
+    function getDeckCounts() {
+        const cnt = {};
+        currentNumbers.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
+        return cnt;
+    }
+
+    function getNumberCountsFromExpr(expr) {
+        const matches = expr.match(/\d+(?:\.\d+)?/g);
+        if (!matches) return {};
+        const cnt = {};
+        matches.forEach(m => { let n = Number(m); if (Number.isInteger(n)) cnt[n] = (cnt[n] || 0) + 1; });
+        return cnt;
+    }
+
+    function canAddNumber(num, expr) {
+        const deck = getDeckCounts();
+        const used = getNumberCountsFromExpr(expr);
+        return (used[num] || 0) < (deck[num] || 0);
+    }
+
+    function canInsertDigitAt(expr, pos) {
+        if (expr.length === 0) return true;
+        if (pos === 0) return true;
+        const prevChar = expr[pos - 1];
+        if (/\d/.test(prevChar)) return false;
+        if (prevChar === ')') return false;
+        return true;
+    }
+
+    function isLegalInsert(exprBefore, insertChar, cursorPos) {
+        const before = exprBefore.substring(0, cursorPos);
+        const after = exprBefore.substring(cursorPos);
+        const newExpr = before + insertChar + after;
+        if (/^[+\-*/]/.test(newExpr)) return false;
+        if (/[+\-*/]{2,}/.test(newExpr)) return false;
+        if (/\([+\-*/]/.test(newExpr)) return false;
+        if (/[+\-*/]\)/.test(newExpr)) return false;
+        if (insertChar === ')') {
+            let bal = 0;
+            for (let ch of newExpr) {
+                if (ch === '(') bal++;
+                if (ch === ')') bal--;
+                if (bal < 0) return false;
+            }
+        }
+        if (/\(\)/.test(newExpr)) return false;
+        if (/[+\-*/]\)/.test(newExpr)) return false;
+        return true;
+    }
+
+    function appendToExpression(txt) {
+        const input = expressionInput;
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+        const currentExpr = input.value;
+
+        if (/^\d+$/.test(txt)) {
+            const num = parseInt(txt, 10);
+            if (!canAddNumber(num, currentExpr)) {
+                soundManager.playForbiddenSound();
+                showMessage(`⚠️ 数字 ${num} 已经用完了！`, true, false, false, true);
+                return;
+            }
+            let effectivePos = start;
+            let effectiveExpr = currentExpr;
+            if (start !== end) {
+                effectiveExpr = currentExpr.substring(0, start) + currentExpr.substring(end);
+                effectivePos = start;
+            }
+            if (!canInsertDigitAt(effectiveExpr, effectivePos)) {
+                soundManager.playForbiddenSound();
+                showMessage(`❌ 数字不能连续输入！请在数字之间加上运算符。`, true, false, false, true);
+                return;
+            }
+        } else if (['+', '-', '*', '/'].includes(txt)) {
+            let exprForCheck = currentExpr;
+            let pos = start;
+            if (start !== end) {
+                exprForCheck = currentExpr.substring(0, start) + currentExpr.substring(end);
+                pos = start;
+            }
+            if (!isLegalInsert(exprForCheck, txt, pos)) {
+                soundManager.playForbiddenSound();
+                showMessage(`❌ 运算符 "${txt}" 非法！不能连续运算符、开头或左括号后紧跟运算符。`, true, false, false, true);
+                return;
+            }
+        } else if (txt === '(' || txt === ')') {
+            let exprForCheck = currentExpr;
+            let pos = start;
+            if (start !== end) {
+                exprForCheck = currentExpr.substring(0, start) + currentExpr.substring(end);
+                pos = start;
+            }
+            if (!isLegalInsert(exprForCheck, txt, pos)) {
+                soundManager.playForbiddenSound();
+                if (txt === ')') showMessage(`❌ 右括号不匹配或位置非法！`, true, false, false, true);
+                else showMessage(`❌ 左括号后不能直接跟运算符！`, true, false, false, true);
+                return;
+            }
+        }
+
+        const newValue = currentExpr.substring(0, start) + txt + currentExpr.substring(end);
+        input.value = newValue;
+        const newPos = start + txt.length;
+        input.setSelectionRange(newPos, newPos);
+        input.focus();
+
+        if (/^\d+$/.test(txt)) soundManager.playDigitSound();
+        else if (['+', '-', '*', '/'].includes(txt)) soundManager.playOperatorSound();
+        else if (txt === '(' || txt === ')') soundManager.playBracketSound();
+
+        updateCardsVisual();
+    }
+
+    function clearInput() {
+        expressionInput.value = '';
+        expressionInput.focus();
+        soundManager.playClearSound();
+        updateCardsVisual();
+    }
+
+    function updateCardsVisual() {
+        const cards = cardsArea.querySelectorAll('.card');
+        const usedCount = getNumberCountsFromExpr(expressionInput.value);
+        cards.forEach((card, idx) => {
+            const num = currentNumbers[idx];
+            const used = usedCount[num] || 0;
+            const total = currentNumbers.filter(n => n === num).length;
+            if (used >= total) {
+                card.classList.add('used');
+            } else {
+                card.classList.remove('used');
+            }
+        });
+    }
+
+    function buildKeypad() {
+        keypadContainer.innerHTML = '';
+        const grid = document.createElement('div');
+        grid.className = 'key-grid';
+        const operators = ['+', '-', '*', '/'];
+        operators.forEach(op => {
+            const btn = document.createElement('button');
+            btn.className = 'key-btn operator';
+            btn.textContent = op;
+            btn.addEventListener('click', () => appendToExpression(op));
+            grid.appendChild(btn);
+        });
+        const leftBracket = document.createElement('button');
+        leftBracket.className = 'key-btn bracket';
+        leftBracket.textContent = '(';
+        leftBracket.addEventListener('click', () => appendToExpression('('));
+        const rightBracket = document.createElement('button');
+        rightBracket.className = 'key-btn bracket';
+        rightBracket.textContent = ')';
+        rightBracket.addEventListener('click', () => appendToExpression(')'));
+        grid.appendChild(leftBracket);
+        grid.appendChild(rightBracket);
+        const backBtn = document.createElement('button');
+        backBtn.className = 'key-btn special';
+        backBtn.textContent = '⌫';
+        backBtn.addEventListener('click', () => {
+            const input = expressionInput;
+            const s = input.selectionStart, e = input.selectionEnd;
+            if (s === 0 && e === 0) return;
+            let newVal;
+            if (s === e) newVal = input.value.substring(0, s-1) + input.value.substring(s);
+            else newVal = input.value.substring(0, s) + input.value.substring(e);
+            input.value = newVal;
+            const newPos = s === e ? s-1 : s;
+            input.setSelectionRange(newPos, newPos);
+            input.focus();
+            soundManager.playBackspaceSound();
+            updateCardsVisual();
+        });
+        grid.appendChild(backBtn);
+        const clearKey = document.createElement('button');
+        clearKey.className = 'key-btn special';
+        clearKey.textContent = 'C';
+        clearKey.addEventListener('click', clearInput);
+        grid.appendChild(clearKey);
+        keypadContainer.appendChild(grid);
+    }
+
+    function updateCardsUI() {
+        cardsArea.innerHTML = '';
+        currentNumbers.forEach((num, idx) => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const suits = ['♠', '♥', '♣', '♦'];
+            const suit = suits[idx % 4];
+            card.innerHTML = `<div class="card-value">${num}</div><div class="card-suit">${suit}</div>`;
+            card.addEventListener('click', (e) => {
+                const expr = expressionInput.value;
+                if (!canAddNumber(num, expr)) {
+                    soundManager.playForbiddenSound();
+                    showMessage(`⚠️ 数字 ${num} 已经用完了！`, true, false, false, true);
+                    return;
+                }
+                const start = expressionInput.selectionStart;
+                const end = expressionInput.selectionEnd;
+                let effectiveExpr = expr;
+                let effectivePos = start;
+                if (start !== end) {
+                    effectiveExpr = expr.substring(0, start) + expr.substring(end);
+                    effectivePos = start;
+                }
+                if (!canInsertDigitAt(effectiveExpr, effectivePos)) {
+                    soundManager.playForbiddenSound();
+                    showMessage(`❌ 数字不能连续输入！请在数字之间加上运算符。`, true, false, false, true);
+                    return;
+                }
+                appendToExpression(num.toString());
+            });
+            cardsArea.appendChild(card);
+        });
+        buildKeypad();
+        updateCardsVisual();
+    }
+
+    const EPS = 1e-6;
+    function isEqual(a,b) { return Math.abs(a-b) < EPS; }
+    function solve24Points(nums) {
+        let nodes = nums.map(n => ({ val: n, expr: n.toString() }));
+        function dfs(arr) {
+            if (arr.length === 1) {
+                if (isEqual(arr[0].val, 24)) return arr[0].expr;
+                return null;
+            }
+            for (let i = 0; i < arr.length; i++) {
+                for (let j = i+1; j < arr.length; j++) {
+                    const a = arr[i], b = arr[j];
+                    const rest = arr.filter((_,idx) => idx !== i && idx !== j);
+                    const ops = [
+                        { val: a.val + b.val, expr: `(${a.expr}+${b.expr})` },
+                        { val: a.val - b.val, expr: `(${a.expr}-${b.expr})` },
+                        { val: b.val - a.val, expr: `(${b.expr}-${a.expr})` },
+                        { val: a.val * b.val, expr: `(${a.expr}*${b.expr})` }
+                    ];
+                    if (Math.abs(b.val) > EPS) ops.push({ val: a.val / b.val, expr: `(${a.expr}/${b.expr})` });
+                    if (Math.abs(a.val) > EPS) ops.push({ val: b.val / a.val, expr: `(${b.expr}/${a.expr})` });
+                    for (let op of ops) {
+                        const res = dfs([...rest, { val: op.val, expr: op.expr }]);
+                        if (res) return res;
+                    }
+                }
+            }
+            return null;
+        }
+        return dfs(nodes);
+    }
+
+    function extractNumbers(expr) {
+        const m = expr.match(/\d+(?:\.\d+)?/g);
+        return m ? m.map(Number) : [];
+    }
+
+    function validateExpression(expr, target) {
+        if (!/^[\d+\-*/()\s.]+$/.test(expr)) return { valid: false, message: "❌ 非法字符" };
+        let bal = 0;
+        for (let ch of expr) { if (ch === '(') bal++; if (ch === ')') bal--; if (bal < 0) break; }
+        if (bal !== 0) return { valid: false, message: "❌ 括号不匹配" };
+        const used = extractNumbers(expr);
+        if (used.length !== 4) return { valid: false, message: `❌ 必须使用4个数字，当前${used.length}个` };
+        const sortedTarget = [...target].sort((a,b)=>a-b);
+        const sortedUsed = used.map(v=>Math.round(v*1e6)/1e6).sort((a,b)=>a-b);
+        for (let i=0;i<4;i++) if (Math.abs(sortedUsed[i]-sortedTarget[i])>1e-5) return { valid: false, message: `❌ 数字必须与牌面一致: ${target.join(', ')}` };
+        let val;
+        try { val = new Function('return (' + expr + ')')(); if (isNaN(val) || !isFinite(val)) throw new Error(); }
+        catch(e) { return { valid: false, message: "❌ 表达式语法错误/除零" }; }
+        if (Math.abs(val-24) < EPS) return { valid: true, message: "🎉 正确！结果=24 🎉" };
+        else return { valid: false, message: `❌ 计算结果 = ${val.toFixed(4)} ≠ 24` };
+    }
+
+    function handleCheck() {
+        const expr = expressionInput.value.trim();
+        if (!expr) { showMessage("📝 请先构造算式", false); return; }
+        const res = validateExpression(expr, currentNumbers);
+        if (res.valid) { showMessage(res.message, false, true); soundManager.playSuccessSound(); }
+        else { showMessage(res.message, true); }
+    }
+
+    function handleHint() {
+        if (!hintExpression) showMessage(`😢 当前组合 [${currentNumbers.join(', ')}] 无解，试试新一局`, true);
+        else showMessage(`💡 解法: ${hintExpression} = 24`, false, false, true);
+    }
+
+    function randomWithSolution(maxAttempt=20) {
+        for (let i=0;i<maxAttempt;i++) {
+            let arr = Array.from({length:4},()=>Math.floor(Math.random()*13)+1);
+            let sol = solve24Points(arr);
+            if (sol) return { nums: arr, solution: sol };
+        }
+        return { nums: [3,3,8,8], solution: "8/(3-8/3)" };
+    }
+
+    function newGame() {
+        const { nums, solution } = randomWithSolution(15);
+        currentNumbers = [...nums];
+        hintExpression = solution;
+        clearInput();
+        updateCardsUI();
+        showMessage(`✨ 新回合: ${currentNumbers.join(', ')}，每个数字只能用一次，数字之间必须用运算符。`, false);
+    }
+
+    function toggleSound() {
+        const en = soundManager.toggleSoundEffects();
+        soundToggleBtn.innerHTML = en ? "🔊 音效" : "🔇 音效";
+        showMessage(en ? "🔊 音效已开启" : "🔇 音效已关闭", false);
+        if (en) soundManager._playTone(880,0.08,0.1,'sine');
+    }
+
+    function activateSoundAndStart() {
+        if (soundManager.isEnabled) return;
+        soundManager.activate().then(() => {
+            if (soundOverlay) soundOverlay.style.display = 'none';
+            showMessage("🔊 音效已激活！", false);
+            soundToggleBtn.innerHTML = soundManager.getSoundEffectsState() ? "🔊 音效" : "🔇 音效";
+        }).catch(e=>console.warn);
+    }
+
+    if (soundOverlay) soundOverlay.addEventListener('click', (e) => { e.stopPropagation(); activateSoundAndStart(); });
+    document.body.addEventListener('click', (e) => {
+        if (!soundManager.isEnabled && soundOverlay && soundOverlay.style.display !== 'none') return;
+        if (!soundManager.isEnabled) activateSoundAndStart();
+    });
+    soundToggleBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!soundManager.isEnabled) { activateSoundAndStart(); setTimeout(()=>toggleSound(),100); }
+        else toggleSound();
+    });
+
+    function init() {
+        const initData = randomWithSolution(10);
+        currentNumbers = initData.nums;
+        hintExpression = initData.solution;
+        updateCardsUI();
+        showMessage(`🎯 当前: ${currentNumbers.join(', ')}，点击牌面输入，数字用完自动禁止，不可连续输数字。`, false);
+        checkBtn.addEventListener('click', handleCheck);
+        newGameBtn.addEventListener('click', newGame);
+        hintBtn.addEventListener('click', handleHint);
+        expressionInput.addEventListener('keydown', (e) => { e.preventDefault(); return false; });
+        expressionInput.addEventListener('beforeinput', (e) => { e.preventDefault(); return false; });
+        soundToggleBtn.innerHTML = "🔊 音效";
+    }
+    init();
+</script>
+</body>
+</html>

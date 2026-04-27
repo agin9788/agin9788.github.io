@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数独 Sudoku</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui, sans-serif}
+body{background:#f7f8fa;margin:0;padding:10px;display:flex;flex-direction:column;align-items:center}
+.container{max-width:420px;width:100%}
+h1{text-align:center;color:#333;margin:8px 0 12px;font-size:22px}
+.board{display:grid;grid-template-columns:repeat(9,1fr);gap:0;background:#222;border:2px solid #222}
+.cell{width:100%;aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;
+font-size:18px;font-weight:bold;border:1px solid #ddd;position:relative}
+.cell input{width:100%;height:100%;text-align:center;border:none;outline:none;font-size:inherit;background:transparent}
+.cell.fixed{background:#f0f4ff;color:#0046aa}
+.cell.error input{color:#ff3333}
+.cell.selected{background:#e6f7ff}
+.cell:nth-child(3n){border-right:2px solid #222}
+.cell:nth-child(9n+1){border-left:2px solid #222}
+.board > .cell:nth-child(n+19):nth-child(-n+27),
+.board > .cell:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid #222}
+.btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+button{padding:10px;border:none;border-radius:8px;background:#409eff;color:white;font-size:15px;cursor:pointer}
+button:active{background:#338ecc}
+.keypad{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;
+}
+.keypad button{
+  height:40px;font-size:18px;background:#555;
+}
+.keypad button.del{background:#f56c6c}
+.keypad button.empty{background:#999}
+#msg{margin-top:8px;text-align:center;height:20px;color:#555}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>数独</h1>
+  <div class="board" id="board"></div>
+  <div class="keypad" id="keypad">
+    <button onclick="pressNum(1)">1</button>
+    <button onclick="pressNum(2)">2</button>
+    <button onclick="pressNum(3)">3</button>
+    <button onclick="pressNum(4)">4</button>
+    <button onclick="pressNum(5)">5</button>
+    <button onclick="pressNum(6)">6</button>
+    <button onclick="pressNum(7)">7</button>
+    <button onclick="pressNum(8)">8</button>
+    <button onclick="pressNum(9)">9</button>
+    <button class="empty" onclick="pressNum(0)">清空</button>
+    <button class="del" onclick="delNum()">删除</button>
+  </div>
+  <div class="btns">
+    <button onclick="newGame()">新游戏</button>
+    <button onclick="checkBoard()">检查</button>
+    <button onclick="solveBoard()">解题</button>
+    <button onclick="fillEasy()">简单</button>
+    <button onclick="fillHard()">困难</button>
+    <button onclick="clearBoard()">重填</button>
+  </div>
+  <div id="msg"></div>
+</div>
+<script>
+const boardEl = document.getElementById('board');
+const msgEl = document.getElementById('msg');
+let solution = [];
+let puzzle = [];
+let currentInput = null;
+
+// 点击音
+function playClick() {
+  const a = new (window.AudioContext || webkitAudioContext)();
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = 'sine';
+  o.frequency.value = 900;
+  g.gain.value = 0.15;
+  o.connect(g);
+  g.connect(a.destination);
+  o.start();
+  o.stop(a.currentTime + 0.06);
+}
+// 正确提示音
+function playSuccess() {
+  const a = new (window.AudioContext || webkitAudioContext)();
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = 'sine';
+  o.frequency.value = 700;
+  g.gain.value = 0.2;
+  o.connect(g);
+  g.connect(a.destination);
+  o.start();
+  o.frequency.setValueAtTime(700, a.currentTime + 0.1);
+  o.frequency.setValueAtTime(900, a.currentTime + 0.15);
+  o.stop(a.currentTime + 0.25);
+}
+// 错误提示音
+function playError() {
+  const a = new (window.AudioContext || webkitAudioContext)();
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = 'triangle';
+  o.frequency.value = 320;
+  g.gain.value = 0.25;
+  o.connect(g);
+  g.connect(a.destination);
+  o.start();
+  o.stop(a.currentTime + 0.25);
+}
+// 通关恭喜音（更欢快）
+function playWin() {
+  const a = new (window.AudioContext || webkitAudioContext)();
+  const o = a.createOscillator();
+  const g = a.createGain();
+  o.type = 'sine';
+  o.frequency.value = 600;
+  g.gain.value = 0.25;
+  o.connect(g);
+  g.connect(a.destination);
+  o.start();
+  o.frequency.setValueAtTime(600, a.currentTime + 0.08);
+  o.frequency.setValueAtTime(800, a.currentTime + 0.16);
+  o.frequency.setValueAtTime(1000, a.currentTime + 0.24);
+  o.stop(a.currentTime + 0.4);
+}
+
+function newBoard() {
+  boardEl.innerHTML = '';
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      const input = document.createElement('input');
+      input.readOnly = true;
+      input.dataset.r = r;
+      input.dataset.c = c;
+      cell.appendChild(input);
+      cell.addEventListener('click', () => {
+        document.querySelectorAll('.cell').forEach(el=>el.classList.remove('selected'));
+        cell.classList.add('selected');
+        currentInput = input;
+      });
+      // 输入后自动检查是否填满并验证
+      input.addEventListener('input', autoCheckFull);
+      boardEl.appendChild(cell);
+    }
+  }
+}
+
+function shuffle(arr) {
+  let a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function isValid(g, r, c, num) {
+  for (let i = 0; i < 9; i++) if (g[r][i] === num || g[i][c] === num) return false;
+  const br = Math.floor(r / 3) * 3;
+  const bc = Math.floor(c / 3) * 3;
+  for (let i = 0; i < 3; i++)
+    for (let j = 0; j < 3; j++)
+      if (g[br + i][bc + j] === num) return false;
+  return true;
+}
+
+function fillFull(g) {
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (g[r][c] === 0) {
+        const nums = shuffle([1,2,3,4,5,6,7,8,9]);
+        for (let n of nums) {
+          if (isValid(g, r, c, n)) {
+            g[r][c] = n;
+            if (fillFull(g)) return true;
+            g[r][c] = 0;
+          }
+        }
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function generate() {
+  let g = Array.from({length:9},()=>Array(9).fill(0));
+  fillFull(g);
+  return g;
+}
+
+function countSolutions(g) {
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      if (g[r][c] === 0) {
+        let count = 0;
+        for (let n = 1; n <= 9; n++) {
+          if (isValid(g, r, c, n)) {
+            g[r][c] = n;
+            let cnt = countSolutions(g);
+            if (cnt > 1) return 2;
+            count += cnt;
+            g[r][c] = 0;
+          }
+        }
+        return count;
+      }
+    }
+  }
+  return 1;
+}
+
+function makePuzzle(g, holes) {
+  let p = JSON.parse(JSON.stringify(g));
+  let cells = [];
+  for (let r=0;r<9;r++)for(let c=0;c<9;c++)cells.push([r,c]);
+  cells = shuffle(cells);
+  let removed = 0;
+  for (let [r,c] of cells) {
+    if (removed >= holes) break;
+    const old = p[r][c];
+    p[r][c] = 0;
+    if (countSolutions(JSON.parse(JSON.stringify(p))) !== 1) {
+      p[r][c] = old;
+    } else {
+      removed++;
+    }
+  }
+  return p;
+}
+
+function render(puz) {
+  const inputs = boardEl.querySelectorAll('input');
+  inputs.forEach((i, idx) => {
+    const r = Math.floor(idx / 9);
+    const c = idx % 9;
+    i.value = '';
+    i.parentElement.classList.remove('fixed', 'error', 'selected');
+    if (puz[r][c] !== 0) {
+      i.value = puz[r][c];
+      i.parentElement.classList.add('fixed');
+    }
+  });
+  currentInput = null;
+}
+
+// 自动检查是否填满
+function isBoardFull() {
+  const inputs = boardEl.querySelectorAll('input');
+  for (let i of inputs) {
+    if (!i.value.trim()) return false;
+  }
+  return true;
+}
+
+// 自动检查并判断胜利
+function autoCheckFull() {
+  if (!isBoardFull()) return;
+  // 已填满，执行检查
+  const ok = checkBoardAuto();
+  if (ok) {
+    playWin();
+    msgEl.textContent = '🎉 恭喜通关！完全正确！';
+    setTimeout(() => alert('🎉 恭喜你！数独完全正确！'), 100);
+  } else {
+    playError();
+    msgEl.textContent = '❌ 已填满但有错误';
+  }
+}
+
+// 无提示纯校验，返回布尔
+function checkBoardAuto() {
+  const g = getUser();
+  let ok = true;
+  const inputs = boardEl.querySelectorAll('input');
+  inputs.forEach(i => i.parentElement.classList.remove('error'));
+  for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      const v = g[r][c];
+      if (!v) continue;
+      g[r][c] = 0;
+      if (!isValid(g, r, c, v)) {
+        inputs[r*9+c].parentElement.classList.add('error');
+        ok = false;
+      }
+      g[r][c] = v;
+    }
+  }
+  return ok;
+}
+
+function newGame() {
+  playClick();
+  msgEl.textContent = '';
+  solution = generate();
+  puzzle = makePuzzle(solution, 40);
+  render(puzzle);
+}
+
+function fillEasy() {
+  playClick();
+  solution = generate();
+  puzzle = makePuzzle(solution, 32);
+  render(puzzle);
+  msgEl.textContent = '简单模式';
+}
+
+function fillHard() {
+  playClick();
+  solution = generate();
+  puzzle = makePuzzle(solution, 48);
+  render(puzzle);
+  msgEl.textContent = '困难模式';
+}
+
+function getUser() {
+  let g = JSON.parse(JSON.stringify(puzzle));
+  const inputs = boardEl.querySelectorAll('input');
+  inputs.forEach((i, idx) => {
+    const r = Math.floor(idx / 9);
+    const c = idx % 9;
+    const v = i.value.trim();
+    if (v) g[r][c] = parseInt(v);
+  });
+  return g;
+}
+
+function checkBoard() {
+  const ok = checkBoardAuto();
+  if (ok) {
+    playSuccess();
+    msgEl.textContent = '✅ 无错误';
+  } else {
+    playError();
+    msgEl.textContent = '❌ 有错误';
+  }
+}
+
+function solveBoard() {
+  playSuccess();
+  const inputs = boardEl.querySelectorAll('input');
+  inputs.forEach((i, idx) => {
+    const r = Math.floor(idx/9), c=idx%9;
+    i.value = solution[r][c];
+    i.parentElement.classList.remove('error');
+  });
+  msgEl.textContent = '🎉 已解答';
+}
+
+function clearBoard() {
+  playClick();
+  const inputs = boardEl.querySelectorAll('input');
+  inputs.forEach(i => {
+    if (!i.parentElement.classList.contains('fixed')) {
+      i.value = '';
+    }
+    i.parentElement.classList.remove('error');
+  });
+  msgEl.textContent = '已重填';
+}
+
+function pressNum(n) {
+  playClick();
+  if(!currentInput || currentInput.parentElement.classList.contains('fixed')) return;
+  if(n === 0){
+    currentInput.value = '';
+  }else{
+    currentInput.value = n;
+  }
+  msgEl.textContent = '';
+  autoCheckFull();
+}
+
+function delNum() {
+  playClick();
+  if(!currentInput || currentInput.parentElement.classList.contains('fixed')) return;
+  currentInput.value = '';
+  msgEl.textContent = '';
+}
+
+newBoard();
+newGame();
+</script>
+</body>
+</html>

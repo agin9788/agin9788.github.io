@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>随行音乐播放器 | 本地无损体验</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        #playlist::-webkit-scrollbar { width: 4px; }
+        #playlist::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        #playlist::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 10px; }
+        #progress-dot {
+            transition: transform 0.1s ease, left 0.05s linear;
+            will-change: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        #progress-bar, #progress-dot { touch-action: none; }
+        button:active { transform: scale(0.95); transition: transform 0.05s; }
+        #playlist li { transition: all 0.2s ease; word-break: break-word; }
+        @media (max-width: 640px) {
+            #progress-dot { width: 18px; height: 18px; top: -7px; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-800 via-indigo-800 to-purple-700 min-h-screen flex items-center justify-center p-4 font-sans">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-white/20">
+        <div class="px-6 pt-6 pb-4">
+            <div class="text-center mb-2">
+                <h1 id="title" class="text-2xl font-bold text-gray-800 truncate">🎵 未选择音乐</h1>
+                <p id="artist" class="text-indigo-500 text-sm mt-1 font-medium">本地播放器 · 自由聆听</p>
+            </div>
+
+            <div class="mt-5">
+                <div class="flex justify-between text-xs text-gray-500 mb-1.5">
+                    <span id="current-time" class="font-mono">0:00</span>
+                    <span id="duration" class="font-mono">0:00</span>
+                </div>
+                <div class="relative w-full" id="progress-container">
+                    <div id="progress-bar" class="w-full bg-gray-200 rounded-full h-2 cursor-pointer relative group">
+                        <div id="progress" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-2 rounded-full w-0 transition-all duration-75"></div>
+                        <div id="progress-dot" class="absolute h-4 w-4 bg-white rounded-full shadow-md -top-1 left-0 scale-100 ring-2 ring-indigo-400/60 transition-transform"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-8 mb-5">
+                <button id="shuffle" class="text-gray-400 hover:text-indigo-600 transition-all text-xl w-10 h-10 rounded-full flex items-center justify-center hover:bg-indigo-50">
+                    <i class="fa fa-random"></i>
+                </button>
+                <button id="prev" class="text-gray-700 hover:text-indigo-600 transition-all text-2xl w-12 h-12 rounded-full flex items-center justify-center hover:bg-indigo-50">
+                    <i class="fa fa-step-backward"></i>
+                </button>
+                <button id="play-pause" class="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl transition-all shadow-lg shadow-indigo-300/40 active:shadow-md">
+                    <i id="play-icon" class="fa fa-play ml-0.5"></i>
+                </button>
+                <button id="next" class="text-gray-700 hover:text-indigo-600 transition-all text-2xl w-12 h-12 rounded-full flex items-center justify-center hover:bg-indigo-50">
+                    <i class="fa fa-step-forward"></i>
+                </button>
+                <button id="repeat" class="text-gray-400 hover:text-indigo-600 transition-all text-xl w-10 h-10 rounded-full flex items-center justify-center hover:bg-indigo-50">
+                    <i class="fa fa-repeat"></i>
+                </button>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 mb-6">
+                <label for="file-input" class="px-4 py-2 bg-indigo-100 text-indigo-700 rounded-full cursor-pointer hover:bg-indigo-200 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm">
+                    <i class="fa fa-music"></i>
+                    <span class="hidden sm:inline">多选音乐</span>
+                    <span class="sm:hidden">选歌</span>
+                </label>
+                <input type="file" id="file-input" accept="audio/*" multiple class="hidden">
+                
+                <div class="flex items-center gap-2 flex-1 bg-gray-100 px-3 py-1.5 rounded-full">
+                    <i id="volume-icon" class="fa fa-volume-up text-gray-500 text-sm"></i>
+                    <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" class="flex-1 h-1.5 bg-gray-300 rounded-lg appearance-none cursor-pointer accent-indigo-500">
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 pt-4 flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-1">
+                    <i class="fa fa-list-ul text-indigo-400 text-xs"></i> 播放列表
+                    <span id="playlist-count" class="text-xs text-gray-400 ml-1">(0首)</span>
+                </h3>
+                <button id="clear-playlist" class="text-xs text-gray-400 hover:text-red-400 transition" title="清空列表">
+                    <i class="fa fa-trash-o"></i>
+                </button>
+            </div>
+            <ul id="playlist" class="max-h-56 overflow-y-auto mt-2 pr-1 space-y-1"></ul>
+        </div>
+    </div>
+    <audio id="audio" preload="auto">
+
+    <script>
+        const audio = document.getElementById('audio');
+        const playPauseBtn = document.getElementById('play-pause');
+        const playIcon = document.getElementById('play-icon');
+        const progressBar = document.getElementById('progress-bar');
+        const progressFill = document.getElementById('progress');
+        const progressDot = document.getElementById('progress-dot');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
+        const volumeSlider = document.getElementById('volume');
+        const volumeIcon = document.getElementById('volume-icon');
+        const prevBtn = document.getElementById('prev');
+        const nextBtn = document.getElementById('next');
+        const shuffleBtn = document.getElementById('shuffle');
+        const repeatBtn = document.getElementById('repeat');
+        const playlistEl = document.getElementById('playlist');
+        const titleEl = document.getElementById('title');
+        const artistEl = document.getElementById('artist');
+        const fileInput = document.getElementById('file-input');
+        const clearPlaylistBtn = document.getElementById('clear-playlist');
+        const playlistCountSpan = document.getElementById('playlist-count');
+
+        let localSongs = [];
+        let currentSongIndex = -1;
+        let isPlaying = false;
+        let repeatMode = 1;
+        let shuffleMode = false;
+        let shuffleOrder = [];
+        let currentShufflePos = -1;
+        let isSeeking = false;
+        let seekingBeforePlayState = false;
+
+        function formatTime(seconds) {
+            if (isNaN(seconds) || !isFinite(seconds)) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+        }
+
+        function updatePlaylistUI() {
+            const items = playlistEl.querySelectorAll('li');
+            items.forEach((li, idx) => {
+                if (idx === currentSongIndex) {
+                    li.className = "py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 mb-1 cursor-pointer font-medium border-l-4 border-indigo-400 shadow-sm";
+                } else {
+                    li.className = "py-2.5 px-3 rounded-xl hover:bg-gray-50 text-gray-600 mb-1 cursor-pointer transition-all hover:pl-4";
+                }
+            });
+            playlistCountSpan.textContent = `(${localSongs.length}首)`;
+        }
+
+        function generateShuffleOrder() {
+            if (localSongs.length === 0) { shuffleOrder = []; currentShufflePos = -1; return; }
+            let indices = Array.from({ length: localSongs.length }, (_, i) => i);
+            for (let i = indices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [indices[i], indices[j]] = [indices[j], indices[i]];
+            }
+            shuffleOrder = indices;
+            if (currentSongIndex !== -1) {
+                const pos = shuffleOrder.indexOf(currentSongIndex);
+                if (pos !== -1) {
+                    const [track] = shuffleOrder.splice(pos, 1);
+                    shuffleOrder.unshift(track);
+                    currentShufflePos = 0;
+                } else currentShufflePos = 0;
+            } else currentShufflePos = 0;
+        }
+
+        function disableShuffle() {
+            shuffleMode = false;
+            shuffleBtn.classList.remove('text-indigo-600', 'bg-indigo-50');
+            shuffleBtn.classList.add('text-gray-400');
+        }
+
+        function enableShuffle() {
+            if (localSongs.length === 0) return;
+            shuffleMode = true;
+            shuffleBtn.classList.add('text-indigo-600', 'bg-indigo-50');
+            shuffleBtn.classList.remove('text-gray-400');
+            generateShuffleOrder();
+        }
+
+        function toggleShuffle() {
+            shuffleMode ? disableShuffle() : enableShuffle();
+        }
+
+        function getNextIndex(direction = 1) {
+            if (localSongs.length === 0) return -1;
+            if (shuffleMode) {
+                if (shuffleOrder.length === 0) generateShuffleOrder();
+                if (currentShufflePos === -1 && currentSongIndex !== -1) {
+                    const found = shuffleOrder.indexOf(currentSongIndex);
+                    currentShufflePos = found !== -1 ? found : 0;
+                }
+                if (currentShufflePos === -1) currentShufflePos = 0;
+                let newPos = currentShufflePos + direction;
+                if (repeatMode === 0) {
+                    if (newPos < 0 || newPos >= shuffleOrder.length) return -1;
+                } else {
+                    if (newPos < 0) newPos = shuffleOrder.length - 1;
+                    if (newPos >= shuffleOrder.length) newPos = 0;
+                }
+                return shuffleOrder[newPos];
+            } else {
+                let newIndex = currentSongIndex + direction;
+                if (repeatMode === 0) {
+                    if (newIndex < 0 || newIndex >= localSongs.length) return -1;
+                } else {
+                    if (newIndex < 0) newIndex = localSongs.length - 1;
+                    if (newIndex >= localSongs.length) newIndex = 0;
+                }
+                return newIndex;
+            }
+        }
+
+        function setCurrentSongIndex(newIndex) {
+            if (newIndex < 0 || newIndex >= localSongs.length) return false;
+            currentSongIndex = newIndex;
+            if (shuffleMode) {
+                const pos = shuffleOrder.indexOf(currentSongIndex);
+                if (pos !== -1) currentShufflePos = pos;
+                else { generateShuffleOrder(); currentShufflePos = shuffleOrder.indexOf(currentSongIndex) || 0; }
+            }
+            return true;
+        }
+
+        function loadSong(index, autoPlay = true) {
+            if (index < 0 || index >= localSongs.length) return false;
+            const wasPlaying = isPlaying;
+            audio.pause();
+            setCurrentSongIndex(index);
+            const song = localSongs[currentSongIndex];
+            audio.src = song.url;
+            titleEl.textContent = song.name || "未知歌曲";
+            artistEl.textContent = "🎧 本地音乐";
+            updatePlaylistUI();
+            if (autoPlay || wasPlaying) playSong();
+            return true;
+        }
+
+        function playSong() {
+            if (currentSongIndex === -1) { if (localSongs.length > 0) loadSong(0, true); else return; }
+            audio.play().then(() => {
+                isPlaying = true;
+                playIcon.classList.replace('fa-play', 'fa-pause');
+            }).catch(err => console.warn("播放失败:", err));
+        }
+
+        function pauseSong() {
+            audio.pause();
+            isPlaying = false;
+            playIcon.classList.replace('fa-pause', 'fa-play');
+        }
+
+        function togglePlay() {
+            if (localSongs.length === 0) {
+                titleEl.textContent = "🎼 请先添加音乐";
+                artistEl.textContent = "点击「多选音乐」上传";
+                return;
+            }
+            if (currentSongIndex === -1) loadSong(0, true);
+            else isPlaying ? pauseSong() : playSong();
+        }
+
+        function nextSong() {
+            if (localSongs.length === 0) return;
+            if (repeatMode === 2) { audio.currentTime = 0; playSong(); return; }
+            const nextIdx = getNextIndex(1);
+            nextIdx !== -1 ? loadSong(nextIdx, true) : (pauseSong(), audio.currentTime = 0, updateProgress());
+        }
+
+        function prevSong() {
+            if (localSongs.length === 0) return;
+            if (repeatMode === 2) { audio.currentTime = 0; playSong(); return; }
+            const prevIdx = getNextIndex(-1);
+            prevIdx !== -1 ? loadSong(prevIdx, true) : (pauseSong(), audio.currentTime = 0, updateProgress());
+        }
+
+        function updateProgress() {
+            if (!audio.duration) {
+                progressFill.style.width = '0%';
+                progressDot.style.left = '0%';
+                currentTimeEl.textContent = "0:00";
+                durationEl.textContent = "0:00";
+                return;
+            }
+            const percent = (audio.currentTime / audio.duration) * 100;
+            progressFill.style.width = `${percent}%`;
+            progressDot.style.left = `${percent}%`;
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+            durationEl.textContent = formatTime(audio.duration);
+        }
+
+        function seekToPosition(clientX, element) {
+            if (!audio.duration) return;
+            const rect = element.getBoundingClientRect();
+            let x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+            const percent = x / rect.width;
+            audio.currentTime = percent * audio.duration;
+            updateProgress();
+        }
+
+        function onSeekStart(e) {
+            e.preventDefault();
+            if (!audio.duration || localSongs.length === 0) return;
+            isSeeking = true;
+            seekingBeforePlayState = isPlaying;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            seekToPosition(clientX, progressBar);
+            progressDot.style.transform = 'scale(1.2)';
+        }
+
+        function onSeekMove(e) {
+            if (!isSeeking) return;
+            e.preventDefault();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            seekToPosition(clientX, progressBar);
+        }
+
+        function onSeekEnd(e) {
+            if (!isSeeking) return;
+            isSeeking = false;
+            progressDot.style.transform = 'scale(1)';
+            if (seekingBeforePlayState && audio.paused) audio.play().catch(()=>{});
+        }
+
+        function onProgressBarClick(e) {
+            if (isSeeking || !audio.duration) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            seekToPosition(clientX, progressBar);
+        }
+
+        progressBar.addEventListener('mousedown', onSeekStart);
+        window.addEventListener('mousemove', onSeekMove);
+        window.addEventListener('mouseup', onSeekEnd);
+        progressBar.addEventListener('touchstart', onSeekStart, { passive: false });
+        window.addEventListener('touchmove', onSeekMove, { passive: false });
+        window.addEventListener('touchend', onSeekEnd);
+        progressBar.addEventListener('click', onProgressBarClick);
+
+        function setVolume() {
+            const vol = parseFloat(volumeSlider.value);
+            audio.volume = vol;
+            if (vol === 0) volumeIcon.className = "fa fa-volume-off text-gray-500 text-sm";
+            else if (vol < 0.5) volumeIcon.className = "fa fa-volume-down text-gray-500 text-sm";
+            else volumeIcon.className = "fa fa-volume-up text-gray-500 text-sm";
+        }
+
+        volumeSlider.addEventListener('input', setVolume);
+        volumeIcon.addEventListener('click', () => {
+            if (audio.volume > 0) { audio.volume = 0; volumeSlider.value = 0; }
+            else { audio.volume = 0.7; volumeSlider.value = 0.7; }
+            setVolume();
+        });
+
+        function updateRepeatUI() {
+            repeatBtn.classList.remove('text-indigo-600', 'bg-indigo-50', 'text-gray-400');
+            if (repeatMode === 0) {
+                repeatBtn.classList.add('text-gray-400');
+                repeatBtn.innerHTML = '<i class="fa fa-repeat"></i>';
+                repeatBtn.title = "不循环";
+            } else if (repeatMode === 1) {
+                repeatBtn.classList.add('text-indigo-600', 'bg-indigo-50');
+                repeatBtn.innerHTML = '<i class="fa fa-repeat"></i>';
+                repeatBtn.title = "列表循环";
+            } else {
+                repeatBtn.classList.add('text-indigo-600', 'bg-indigo-50');
+                repeatBtn.innerHTML = '<i class="fa fa-repeat"></i><span class="text-[10px] ml-0.5">1</span>';
+                repeatBtn.title = "单曲循环";
+            }
+        }
+
+        function toggleRepeat() {
+            repeatMode = (repeatMode + 1) % 3;
+            updateRepeatUI();
+        }
+
+        function onAudioEnded() {
+            if (repeatMode === 2) { audio.currentTime = 0; playSong(); }
+            else { const idx = getNextIndex(1); idx !== -1 ? loadSong(idx, true) : (pauseSong(), audio.currentTime = 0); }
+        }
+
+        function renderPlaylist() {
+            playlistEl.innerHTML = '';
+            if (localSongs.length === 0) {
+                playlistEl.innerHTML = '<li class="py-6 text-center text-gray-400 text-sm"><i class="fa fa-music"></i> 暂无音乐，点击上方按钮添加 (可多选)</li>';
+                playlistCountSpan.textContent = "(0首)";
+                return;
+            }
+            localSongs.forEach((song, idx) => {
+                const li = document.createElement('li');
+                li.textContent = song.name;
+                li.dataset.index = idx;
+                li.className = "py-2.5 px-3 rounded-xl hover:bg-gray-50 text-gray-600 mb-1 cursor-pointer transition-all truncate";
+                playlistEl.appendChild(li);
+            });
+            updatePlaylistUI();
+        }
+
+        function addSongsFromFiles(files) {
+            if (!files.length) return;
+            localSongs.forEach(s => s.url && URL.revokeObjectURL(s.url));
+            localSongs = [];
+            const arr = Array.from(files).filter(f => f.type.includes('audio'));
+            if (!arr.length) { alert("请选择有效的音频文件"); return; }
+            arr.forEach(f => {
+                const url = URL.createObjectURL(f);
+                const name = f.name.replace(/\.[^/.]+$/, "");
+                localSongs.push({ name, url, file: f });
+            });
+            renderPlaylist();
+            disableShuffle();
+            repeatMode = 1;
+            updateRepeatUI();
+            loadSong(0, true);
+        }
+
+        function clearAllSongs() {
+            localSongs.forEach(s => s.url && URL.revokeObjectURL(s.url));
+            localSongs = []; currentSongIndex = -1; isPlaying = false;
+            audio.pause(); audio.src = '';
+            titleEl.textContent = "🎵 请添加音乐";
+            artistEl.textContent = "本地播放器";
+            playIcon.classList.replace('fa-pause', 'fa-play');
+            renderPlaylist(); disableShuffle(); updateProgress();
+        }
+
+        playlistEl.addEventListener('click', (e) => {
+            let t = e.target;
+            while (t && t.tagName !== 'LI') t = t.parentElement;
+            if (t && t.dataset.index) {
+                const idx = +t.dataset.index;
+                if (shuffleMode) disableShuffle();
+                loadSong(idx, true);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = e.target.files;
+            if (files?.length) addSongsFromFiles(files);
+            fileInput.value = '';
+        });
+
+        clearPlaylistBtn.addEventListener('click', clearAllSongs);
+        playPauseBtn.addEventListener('click', togglePlay);
+        prevBtn.addEventListener('click', prevSong);
+        nextBtn.addEventListener('click', nextSong);
+        shuffleBtn.addEventListener('click', toggleShuffle);
+        repeatBtn.addEventListener('click', toggleRepeat);
+        audio.addEventListener('timeupdate', updateProgress);
+        audio.addEventListener('loadedmetadata', updateProgress);
+        audio.addEventListener('ended', onAudioEnded);
+
+        progressBar.addEventListener('mouseenter', () => !isSeeking && (progressDot.style.transform = 'scale(1.15)'));
+        progressBar.addEventListener('mouseleave', () => !isSeeking && (progressDot.style.transform = 'scale(1)'));
+
+        setVolume();
+        audio.volume = 0.7;
+        renderPlaylist();
+        updateRepeatUI();
+        disableShuffle();
+    </script>
+</body>
+</html>

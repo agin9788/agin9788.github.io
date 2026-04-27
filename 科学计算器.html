@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>多功能计算器 | 括号·幂·开方·语音播报</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1e2f3a 0%, #0f1a22 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+            padding: 14px;
+        }
+
+        .calculator {
+            max-width: 520px;
+            width: 100%;
+            background: rgba(20, 28, 34, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+            padding: 20px 16px 26px;
+        }
+
+        .display {
+            background: #0b1016;
+            border-radius: 32px;
+            padding: 18px 20px;
+            margin-bottom: 22px;
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+            text-align: right;
+        }
+
+        .expression {
+            font-size: 1.3rem;
+            color: #9aaebf;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            min-height: 42px;
+            word-wrap: break-word;
+            word-break: break-all;
+            letter-spacing: 0.3px;
+        }
+
+        .result {
+            font-size: 2.6rem;
+            font-weight: 700;
+            color: #f7c35c;
+            margin-top: 6px;
+            word-wrap: break-word;
+            font-family: 'Segoe UI', monospace;
+        }
+
+        .voice-status {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 8px;
+            font-size: 0.7rem;
+            color: #6c8d9e;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .voice-toggle {
+            background: #2a3e48;
+            padding: 4px 12px;
+            border-radius: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px 8px;
+        }
+
+        button {
+            background: #25343f;
+            border: none;
+            padding: 12px 0;
+            border-radius: 60px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            font-family: inherit;
+            color: #eef4ff;
+            box-shadow: 0 3px 0 #0f151c;
+            cursor: pointer;
+            transition: 0.05s linear;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0f151c;
+        }
+
+        .num {
+            background: #2c3e4e;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .op {
+            background: #3a5568;
+            color: #ffdd99;
+            font-size: 1.3rem;
+        }
+
+        .func {
+            background: #2c4a55;
+            color: #c3e2f7;
+            font-size: 0.95rem;
+        }
+
+        .clear {
+            background: #7a423a;
+            color: #ffcfb3;
+        }
+
+        .equal {
+            background: #e67e22;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 3px 0 #b85e0c;
+        }
+
+        .span-2 {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 500px) {
+            .calculator { padding: 16px 12px 22px; }
+            button { padding: 10px 0; font-size: 0.9rem; }
+            .num { font-size: 1.1rem; }
+            .op { font-size: 1.1rem; }
+            .func { font-size: 0.8rem; }
+            .equal { font-size: 1.3rem; }
+            .result { font-size: 2rem; }
+            .expression { font-size: 1.1rem; }
+            .buttons { gap: 8px 6px; }
+        }
+
+        @media (max-width: 400px) {
+            button { font-size: 0.8rem; padding: 8px 0; }
+            .func { font-size: 0.7rem; }
+            .num { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="calculator">
+    <div class="display">
+        <div class="expression" id="expr">0</div>
+        <div class="result" id="result">= 0</div>
+        <div class="voice-status">
+            <div class="voice-toggle" id="voiceToggle">🔊 语音播报 开</div>
+        </div>
+    </div>
+    <div class="buttons" id="buttonsContainer"></div>
+</div>
+
+<script>
+    // ---------- 计算器核心 ----------
+    let currentExpression = "";      // 当前表达式
+    let lastResult = null;           // 上次计算结果 (Ans)
+    let waitingForNewOperand = false; // 等号后等待新数字
+    let voiceEnabled = true;          // 语音开关
+    let lastValidPreview = 0;         // 最后一次有效的预览结果（用于表达示不完整时显示）
+
+    const exprDiv = document.getElementById('expr');
+    const resultDiv = document.getElementById('result');
+    const voiceToggleBtn = document.getElementById('voiceToggle');
+
+    // ---------- 语音辅助 (增强可靠性) ----------
+    let speechInitialized = false;
+    // 激活语音 (首次用户交互时调用，解决浏览器限制)
+    function activateSpeech() {
+        if (speechInitialized) return;
+        if (!window.speechSynthesis) return;
+        // 创建一个空 utterance 并立即取消，激活语音系统
+        const dummy = new SpeechSynthesisUtterance('');
+        dummy.lang = 'zh-CN';
+        window.speechSynthesis.speak(dummy);
+        window.speechSynthesis.cancel();
+        speechInitialized = true;
+    }
+
+    // 播报结果
+    function speakResult(value) {
+        if (!voiceEnabled) return;
+        if (!window.speechSynthesis) {
+            console.warn("浏览器不支持语音");
+            return;
+        }
+        // 确保语音已激活
+        activateSpeech();
+        let text = value.toString();
+        if (text.length > 50) text = "计算结果过长";
+        // 取消任何正在播放的语音，避免重叠
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.9;
+        utterance.onerror = (e) => {
+            console.warn("语音错误", e);
+            // 尝试重新激活
+            speechInitialized = false;
+            activateSpeech();
+        };
+        window.speechSynthesis.speak(utterance);
+    }
+
+    // ---------- 数学求值 ----------
+    // 安全计算表达式
+    function safeEvaluate(expr) {
+        try {
+            let calcStr = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**');
+            // 处理百分比
+            calcStr = calcStr.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+            // 避免连续运算符
+            calcStr = calcStr.replace(/([+\-*/%])([+\-*/%])/g, (m, p1, p2) => p2);
+            // 使用 Function 而不是 eval，相对安全
+            let result = Function('"use strict"; return (' + calcStr + ')')();
+            if (isNaN(result) || !isFinite(result)) return null;
+            return parseFloat(result.toFixed(10));
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // 检查表达式是否完整（末尾非运算符且括号匹配）
+    function isExpressionComplete(expr) {
+        let trimmed = expr.trim();
+        if (trimmed === "") return false;
+        const trailingOps = ['+', '-', '*', '/', '%', '^', '(', '×', '÷'];
+        if (trailingOps.includes(trimmed[trimmed.length - 1])) return false;
+        let parenCount = 0;
+        for (let ch of trimmed) {
+            if (ch === '(') parenCount++;
+            if (ch === ')') parenCount--;
+            if (parenCount < 0) return false;
+        }
+        return parenCount === 0;
+    }
+
+    // 当表达式不完整时，尝试计算“最后一个完整子表达式”用于预览
+    function getPartialPreview(expr) {
+        if (!expr) return null;
+        // 移除末尾不完整的运算符或未闭合括号
+        let work = expr;
+        const trailingOps = ['+', '-', '*', '/', '%', '^', '×', '÷'];
+        // 去掉末尾运算符
+        while (work.length > 0 && trailingOps.includes(work[work.length - 1])) {
+            work = work.slice(0, -1);
+        }
+        // 括号匹配检查，去掉多余的未闭合括号使括号数平衡
+        let openParen = 0;
+        let closeParen = 0;
+        for (let ch of work) {
+            if (ch === '(') openParen++;
+            if (ch === ')') closeParen++;
+        }
+        if (openParen > closeParen) {
+            // 去掉末尾的多余开括号（简化处理：从右向左删除开括号）
+            let diff = openParen - closeParen;
+            while (diff > 0 && work.length > 0) {
+                if (work[work.length - 1] === '(') {
+                    work = work.slice(0, -1);
+                    diff--;
+                } else {
+                    break;
+                }
+            }
+        }
+        if (work === "") return null;
+        return safeEvaluate(work);
+    }
+
+    // 更新显示 (改进预览：完整则计算，不完整则尝试部分预览，避免显示三个点)
+    function updateDisplay() {
+        let showExpr = currentExpression === "" ? "0" : currentExpression;
+        exprDiv.innerText = showExpr;
+        
+        if (currentExpression.trim() === "") {
+            resultDiv.innerText = "= 0";
+            lastValidPreview = 0;
+            return;
+        }
+        
+        if (isExpressionComplete(currentExpression)) {
+            let fullResult = safeEvaluate(currentExpression);
+            if (fullResult !== null && !isNaN(fullResult)) {
+                resultDiv.innerText = "= " + fullResult;
+                lastValidPreview = fullResult;
+            } else {
+                resultDiv.innerText = "= 错误";
+            }
+        } else {
+            // 表达式不完整 -> 尝试部分预览
+            let partial = getPartialPreview(currentExpression);
+            if (partial !== null && !isNaN(partial)) {
+                resultDiv.innerText = "≈ " + partial;
+                lastValidPreview = partial;
+            } else {
+                // 如果连部分都无法计算，显示最近一次有效预览结果（或空）
+                if (lastValidPreview !== undefined && lastValidPreview !== null) {
+                    resultDiv.innerText = "= " + lastValidPreview;
+                } else {
+                    resultDiv.innerText = "= ?";
+                }
+            }
+        }
+    }
+
+    // 等号计算
+    function computeFinal() {
+        // 确保语音激活
+        activateSpeech();
+        if (currentExpression.trim() === "") {
+            if (lastResult !== null) {
+                currentExpression = lastResult.toString();
+                updateDisplay();
+            }
+            return;
+        }
+        // 清理末尾无效运算符
+        let cleanExpr = currentExpression.trim();
+        const trailingOps = ['+', '-', '*', '/', '%', '^', '×', '÷'];
+        while (cleanExpr.length > 0 && trailingOps.includes(cleanExpr[cleanExpr.length - 1])) {
+            cleanExpr = cleanExpr.slice(0, -1);
+        }
+        if (cleanExpr === "") return;
+        
+        let result = safeEvaluate(cleanExpr);
+        if (result !== null && !isNaN(result)) {
+            lastResult = result;
+            if (voiceEnabled) speakResult(result);
+            currentExpression = result.toString();
+            waitingForNewOperand = true;
+            updateDisplay();
+        } else {
+            resultDiv.innerText = "= 语法错误";
+            setTimeout(() => updateDisplay(), 800);
+        }
+    }
+
+    // ---------- 表达式操作 ----------
+    function appendToExpression(value) {
+        // 首次输入后激活语音（解锁浏览器限制）
+        activateSpeech();
+        
+        if (waitingForNewOperand && !isNaN(parseFloat(value)) && value !== '.') {
+            currentExpression = "";
+            waitingForNewOperand = false;
+        }
+        // 自动补充乘号：当输入 '(' 且前一个是数字或右括号时
+        if (value === '(' && currentExpression.length > 0) {
+            let last = currentExpression[currentExpression.length - 1];
+            if (/[0-9\)πe]/.test(last)) {
+                currentExpression += '*';
+            }
+        }
+        currentExpression += value;
+        updateDisplay();
+    }
+
+    function clearAll() {
+        currentExpression = "";
+        waitingForNewOperand = false;
+        lastValidPreview = 0;
+        updateDisplay();
+    }
+
+    function backspace() {
+        if (waitingForNewOperand) return;
+        currentExpression = currentExpression.slice(0, -1);
+        updateDisplay();
+    }
+
+    // 一元运算
+    function applyUnary(operation) {
+        if (waitingForNewOperand) {
+            currentExpression = "";
+            waitingForNewOperand = false;
+        }
+        if (currentExpression === "") currentExpression = "0";
+        switch (operation) {
+            case 'square':   currentExpression = `(${currentExpression})^2`; break;
+            case 'cube':     currentExpression = `(${currentExpression})^3`; break;
+            case 'sqrt':     currentExpression = `sqrt(${currentExpression})`; break;
+            case 'recip':    currentExpression = `1/(${currentExpression})`; break;
+            case 'negate':   
+                if (currentExpression.startsWith('-(')) {
+                    currentExpression = currentExpression.slice(2, -1);
+                } else {
+                    currentExpression = `(-(${currentExpression}))`;
+                }
+                break;
+            default: return;
+        }
+        updateDisplay();
+    }
+
+    function insertAns() {
+        if (lastResult !== null) {
+            appendToExpression(lastResult.toString());
+        } else {
+            appendToExpression('0');
+        }
+    }
+
+    // 语音开关
+    function toggleVoice() {
+        voiceEnabled = !voiceEnabled;
+        voiceToggleBtn.innerHTML = voiceEnabled ? "🔊 语音播报 开" : "🔇 语音播报 关";
+        if (voiceEnabled) {
+            // 试播一句提示音
+            const testMsg = new SpeechSynthesisUtterance("语音已开启");
+            testMsg.lang = 'zh-CN';
+            window.speechSynthesis.cancel();
+            window.speechSynthesis.speak(testMsg);
+        } else {
+            window.speechSynthesis.cancel();
+        }
+        // 用户主动切换时也激活语音系统
+        if (voiceEnabled) activateSpeech();
+    }
+
+    // ---------- 构建按钮 ----------
+    function buildButtons() {
+        const container = document.getElementById('buttonsContainer');
+        container.innerHTML = '';
+        
+        const btns = [
+            { label: "AC", action: clearAll, cls: "clear" },
+            { label: "DEL", action: backspace, cls: "func" },
+            { label: "(", action: () => appendToExpression('('), cls: "func" },
+            { label: ")", action: () => appendToExpression(')'), cls: "func" },
+            { label: "Ans", action: insertAns, cls: "func" },
+            { label: "x²", action: () => applyUnary('square'), cls: "func" },
+            { label: "x³", action: () => applyUnary('cube'), cls: "func" },
+            { label: "√", action: () => applyUnary('sqrt'), cls: "func" },
+            { label: "1/x", action: () => applyUnary('recip'), cls: "func" },
+            { label: "±", action: () => applyUnary('negate'), cls: "func" },
+            { label: "7", action: () => appendToExpression('7'), cls: "num" },
+            { label: "8", action: () => appendToExpression('8'), cls: "num" },
+            { label: "9", action: () => appendToExpression('9'), cls: "num" },
+            { label: "÷", action: () => appendToExpression('÷'), cls: "op" },
+            { label: "%", action: () => appendToExpression('%'), cls: "op" },
+            { label: "4", action: () => appendToExpression('4'), cls: "num" },
+            { label: "5", action: () => appendToExpression('5'), cls: "num" },
+            { label: "6", action: () => appendToExpression('6'), cls: "num" },
+            { label: "×", action: () => appendToExpression('×'), cls: "op" },
+            { label: "^", action: () => appendToExpression('^'), cls: "op" },
+            { label: "1", action: () => appendToExpression('1'), cls: "num" },
+            { label: "2", action: () => appendToExpression('2'), cls: "num" },
+            { label: "3", action: () => appendToExpression('3'), cls: "num" },
+            { label: "-", action: () => appendToExpression('-'), cls: "op" },
+            { label: "+", action: () => appendToExpression('+'), cls: "op" },
+            { label: "0", action: () => appendToExpression('0'), cls: "num span-2", extra: "span-2" },
+            { label: ".", action: () => appendToExpression('.'), cls: "num" },
+            { label: "=", action: computeFinal, cls: "equal" }
+        ];
+        
+        btns.forEach(btn => {
+            const button = document.createElement('button');
+            button.innerText = btn.label;
+            let className = "btn";
+            if (btn.cls.includes('num')) className += " num";
+            else if (btn.cls.includes('op')) className += " op";
+            else if (btn.cls.includes('func')) className += " func";
+            else if (btn.cls.includes('clear')) className += " clear";
+            else if (btn.cls.includes('equal')) className += " equal";
+            else className += " func";
+            if (btn.extra) className += " " + btn.extra;
+            button.className = className;
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                btn.action();
+            });
+            container.appendChild(button);
+        });
+    }
+
+    // ---------- 键盘支持 ----------
+    function handleKeyboard(e) {
+        const key = e.key;
+        if (/^[0-9]$/.test(key)) appendToExpression(key);
+        else if (key === '.') appendToExpression('.');
+        else if (key === '+' || key === '-' || key === '*' || key === '/') {
+            let op = key;
+            if (key === '*') op = '×';
+            if (key === '/') op = '÷';
+            appendToExpression(op);
+        }
+        else if (key === '^') appendToExpression('^');
+        else if (key === '(') appendToExpression('(');
+        else if (key === ')') appendToExpression(')');
+        else if (key === '%') appendToExpression('%');
+        else if (key === 'Enter' || key === '=') { e.preventDefault(); computeFinal(); }
+        else if (key === 'Backspace') backspace();
+        else if (key === 'Escape' || key === 'Delete') clearAll();
+    }
+
+    // 首屏激活语音（通过首次任意按钮点击触发, 已在appendToExpression中调用activateSpeech）
+    function init() {
+        buildButtons();
+        clearAll();
+        voiceToggleBtn.addEventListener('click', toggleVoice);
+        window.addEventListener('keydown', handleKeyboard);
+        // 额外激活：点击任意按钮区域都能激活语音；但已经在append里调用了activateSpeech，无需重复
+    }
+    
+    init();
+</script>
+</body>
+</html>
