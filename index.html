@@ -2,7 +2,6 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 关键：移动端视口适配 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>经典小游戏</title>
     <style>
@@ -13,94 +12,160 @@
         }
         body{
             font-family: Microsoft YaHei, sans-serif;
-            background:#f0f2f5;  /* 页面整体背景色 */
+            background:#f0f2f5;
             font-size:16px;
-            margin:0;
             padding:10px;
-            min-height:100vh;
         }
         .container{
-            width:100%;
             max-width:600px;
             margin:0 auto;
-            background:#ffffff;
+            background:#fff;
             padding:18px 14px;
             border-radius:10px;
             box-shadow:0 0 8px rgba(0,0,0,0.1);
         }
-        /* 顶部大标题 文字大小+颜色 */
         h2{
-            color:#1a202c;       /* 标题字体颜色 */
+            color:#1a202c;
             border-bottom:1px solid #eee;
             padding-bottom:12px;
-            font-size:24px;        /* 标题字号 */
-            font-weight:700;
+            font-size:24px;
+            font-weight:bold;
             text-align:center;
         }
-        ul{
-            list-style:none;
+        .pagination{
+            display: flex;
+            justify-content: center;
+            gap:8px;
+            margin:14px 0;
         }
-        li{
-            margin:10px 0;
+        .pagination button{
+            padding:8px 14px;
+            border:none;
+            border-radius:6px;
+            background:#f1f3f5;
+            font-size:16px;
+            color:#333;
+            cursor: pointer;
         }
-        /* 功能按钮：背景色、文字颜色、字号 */
+        .pagination button.active{
+            background:#1677ff;
+            color:#fff;
+        }
+        ul{list-style:none;}
+        li{margin:10px 0;}
         a{
             display:block;
-            padding:16px 14px;
-            background:#1677ff;     /* 按钮默认背景色 */
-            color:#ffffff;          /* 按钮文字颜色 */
+            padding:16px;
+            color:#fff;
             text-decoration:none;
             border-radius:8px;
-            font-size:18px;           /* 按钮文字大小 */
-            transition:0.2s;
             text-align:center;
-            min-height:50px;
-            line-height:1.4;
-            font-weight:500;
         }
-        a:hover{
-            background:#CC33FF;     /* 按钮悬浮背景色 */
+        a:hover{opacity:0.9;}
+
+        /* ———————— 每个按钮独立设置：颜色、大小、文字样式 ———————— */
+        /* 游戏页按钮 */
+        #p1 a {
+            background: #ffccff;
+            opacity: 0.7;
+            font-size: 18px;     /* 文字大小 */
+            color: #330000;      /* 文字颜色 */
+            font-weight: 500;    /*bold;    /* 文字加粗 */
         }
-        /* 分类标题：字号、字体色、左侧条、背景 */
+        /* 工具页按钮 */
+        #p2 a {
+            background: #ccffff;
+            opacity: 0.9;
+            font-size: 18px;     /* 文字大小 */
+            color: #000033;      /* 文字颜色 */
+            font-weight: 500;    /* 常规粗细 */
+        }
+        /* 益智页按钮 */
+        #p3 a {
+            background: #ccffcc;
+            opacity: 0.9;
+            font-size: 18px;     /* 文字大小 */
+            color: #003300;      /* 文字颜色 */
+            font-weight: 500;    /*bold;    /* 文字加粗 */
+        }
+
+        /* 每页标题样式 */
+        .cat1 { color: #660000; font-size: 20px; border-left:5px solid #ff4444; background: #ffe5e5; }
+        .cat2 { color: #330066; font-size: 20px; border-left:5px solid #1677ff; background: #e5f0ff; }
+        .cat3 { color: #003333; font-size: 20px; border-left:5px solid #00C851; background: #e5ffe5; }
+
         .category-title{
-            color:#d32f2f;          /* 分类标题文字颜色 */
-            font-size:20px;           /* 分类标题字号 */
             margin:20px 0 10px;
             padding:8px 12px;
-            border-left:5px solid #d32f2f; /* 左侧彩色竖线 */
             font-weight:bold;
-            background:#fff5f5;     /* 分类标题背景色 */
             border-radius:4px;
         }
+        .page{display:none;}
+        .page.active{display:block;}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>经典小游戏 & 实用工具</h2>
+<div class="container">
+    <h2>经典小游戏 实用工具</h2>
+    <div class="pagination">
+        <button class="active" onclick="go(1)">游戏</button>
+        <button onclick="go(2)">工具</button>
+        <button onclick="go(3)">益智</button>
+    </div>
 
-        <div class="category-title">休闲小游戏</div>
+    <div class="page active" id="p1">
+        <div class="category-title cat1">休闲小游戏</div>
         <ul>
             <li><a href="超级俄罗斯.html">超级俄罗斯</a></li>
             <li><a href="24点_自适应.html">24点_自适应</a></li>
-            <li><a href="暂无.html">开发预留</a></li>
+            <li><a href="俄罗斯方块.html">俄罗斯方块</a></li>
             <li><a href="扫雷.html">经典扫雷</a></li>
         </ul>
+    </div>
 
-        <div class="category-title">实用工具</div>
+    <div class="page" id="p2">
+        <div class="category-title cat2">实用工具</div>
         <ul>
             <li><a href="常用色表.html">常用色表</a></li>
-            <li><a href="颜色代码大全.html">颜色代码大全</a></li>
+            <li><a href="颜色代码表.html">颜色代码大全</a></li>
             <li><a href="进制转换.html">进制转换工具</a></li>
             <li><a href="单位换算.html">单位换算器</a></li>
             <li><a href="播放器.html">本地音乐播放器</a></li>
         </ul>
+    </div>
 
-        <div class="category-title">益智小游戏</div>
+    <div class="page" id="p3">
+        <div class="category-title cat3">益智小游戏</div>
         <ul>
             <li><a href="数独.html">数独闯关</a></li>
             <li><a href="拼图.html">趣味拼图</a></li>
             <li><a href="连连看.html">经典连连看</a></li>
         </ul>
     </div>
+</div>
+
+<script>
+let currentPage = 1;
+function go(n){
+    currentPage = n;
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.pagination button').forEach(b=>b.classList.remove('active'));
+    document.getElementById('p'+n).classList.add('active');
+    document.querySelectorAll('.pagination button')[n-1].classList.add('active');
+}
+
+// 滑动切换
+let startX = 0;
+document.querySelector('.container').addEventListener('touchstart', e=>{
+    startX = e.touches[0].clientX;
+});
+document.querySelector('.container').addEventListener('touchend', e=>{
+    let diff = e.changedTouches[0].clientX - startX;
+    if(Math.abs(diff) > 50){
+        if(diff>0 && currentPage>1) go(currentPage-1);
+        if(diff<0 && currentPage<3) go(currentPage+1);
+    }
+});
+</script>
 </body>
 </html>
