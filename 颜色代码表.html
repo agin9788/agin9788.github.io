@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>216色完整色表 - 点击复制</title>
+  <style>
+    /* 全局基础样式重置 */
+    * {
+      box-sizing: border-box; /* 元素宽度包含padding和border */
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* 页面整体样式 */
+    body {
+      padding: 10px;
+      background: #f5f5f5; /* 浅灰色背景 */
+      font-family: sans-serif; /* 无衬线字体 */
+    }
+    
+    /* 标题样式 */
+    .title {
+      text-align: center; /* 居中对齐 */
+      margin: 10px 0; /* 上下边距10px，左右无边距 */
+      font-size: 20px; /* 字体大小20px */
+    }
+    
+    /* 颜色网格容器样式 - 使用CSS Grid布局 */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr; /* 3列等宽网格 */
+      gap: 6px; /* 网格间隙6px */
+    }
+    
+    /* 单个颜色块样式 */
+    .color {
+      height: 60px; /* 固定高度60px */
+      display: flex;
+      flex-direction: column; /* 垂直排列内部元素 */
+      align-items: center; /* 水平居中 */
+      justify-content: center; /* 垂直居中 */
+      font-size: 16px;
+      font-weight: bold; /* 加粗字体 */
+      border-radius: 4px; /* 4px圆角 */
+      border: 1px solid #ccc; /* 浅灰色边框 */
+      padding: 4px; /* 内边距4px */
+      line-height: 1.3; /* 行高1.3倍 */
+      text-align: center; /* 文本居中 */
+      cursor: pointer; /* 鼠标悬停时显示手型指针 */
+      user-select: none; /* 禁止文本被选中 */
+    }
+    
+    /* 深色背景时的文字颜色（白色） */
+    .dark {
+      color: #fff;
+    }
+    
+    /* 浅色背景时的文字颜色（黑色） */
+    .light {
+      color: #000;
+    }
+    
+    /* 复制成功提示框（Toast）基础样式 */
+    .toast {
+      position: fixed; /* 固定定位，不随页面滚动 */
+      top: 50px; /* 距离顶部50px, bottom: 20px; /* 距离底部20px */
+      left: 50%; /* 左边界定位到50% */
+      transform: translateX(-50%); /* 向左平移自身宽度50%，实现水平居中 */
+      background: #333; /* 深灰色背景 */
+      color: #fff; /* 白色文字 */
+      padding: 6px 12px; /* 内边距：上下6px，左右12px */
+      border-radius: 6px; /* 6px圆角 */
+      font-size: 18px; /* 字体大小18px */
+      opacity: 0; /* 初始完全透明（隐藏） */
+      transition: opacity 0.3s; /* 透明度变化有0.3秒过渡效果 */
+      pointer-events: none; /* 禁止鼠标事件，避免遮挡下方元素 */
+    }
+    
+    /* 提示框显示时的样式 */
+    .toast.show {
+      opacity: 1; /* 完全不透明（显示） */
+    }
+  </style>
+</head>
+<body>
+  <!-- 页面标题 -->
+  <h2 class="title">216网页安全色（点击复制）</h2>
+  
+  <!-- 颜色网格容器 -->
+  <div class="grid">
+    <!-- 颜色块将通过JavaScript动态生成并插入到这里 -->
+  </div>
+  
+  <!-- 复制成功提示框（初始为空且隐藏） -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // 定义六种十六进制颜色分量（00, 33, 66, 99, CC, FF）
+    // 这些是网页安全色的标准分量值
+    const hex = ['00', '33', '66', '99', 'CC', 'FF'];
+    let colors = ''; // 用于存储所有颜色块HTML字符串的变量
+    
+    // 通过三层循环生成216种颜色（6*6*6=216）
+    for (let r = 0; r < 6; r++) {           // 红色分量循环
+      for (let g = 0; g < 6; g++) {         // 绿色分量循环
+        for (let b = 0; b < 6; b++) {       // 蓝色分量循环
+          // 拼接完整的十六进制颜色代码，如 #FF9966
+          const c = '#' + hex[r] + hex[g] + hex[b];
+          
+          // 计算颜色亮度（亮度公式：(R*299 + G*587 + B*114)/1000）
+          // 用于决定在颜色块上使用白色文字还是黑色文字
+          const brightness = (parseInt(hex[r], 16) * 299 +
+                              parseInt(hex[g], 16) * 587 +
+                              parseInt(hex[b], 16) * 114) / 1000;
+          
+          // 根据亮度值决定文字颜色类名
+          // 亮度小于128（中间值）使用深色背景配白色文字，否则使用浅色背景配黑色文字
+          const cls = brightness < 128 ? 'dark' : 'light';
+          
+          // 构建单个颜色块的HTML字符串
+          // data-color属性存储颜色值供复制功能使用
+          // style设置背景色，class包含基础样式和文字颜色类
+          colors += `<div class="color ${cls}" data-color="${c}" style="background:${c}">${c}</div>`;
+        }
+      }
+    }
+    
+    // 将生成的所有颜色块HTML插入到网格容器中
+    document.querySelector('.grid').innerHTML = colors;
+  </script>
+
+  <script>
+    // 获取提示框DOM元素
+    const toast = document.getElementById('toast');
+    
+    // 为所有颜色块添加点击事件监听器
+    document.querySelectorAll('.color').forEach(el => {
+      el.addEventListener('click', () => {
+        // 从data-color属性获取颜色值
+        const c = el.dataset.color;
+        
+        // 创建临时textarea元素用于执行复制操作
+        const textarea = document.createElement('textarea');
+        textarea.value = c; // 设置文本内容为颜色值
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        
+        // 将textarea添加到DOM中
+        document.body.appendChild(textarea);
+        textarea.select(); // 选中文本
+        document.execCommand('copy'); // 执行复制命令
+        document.body.removeChild(textarea); // 复制完成后移除临时元素
+        
+        // 更新提示框内容并显示
+        toast.textContent = '📋📝已复制：' + c;
+        toast.classList.add('show'); // 添加show类使提示框显示
+        
+        // 3秒后自动隐藏提示框
+        setTimeout(() => toast.classList.remove('show'), 3000);
+      });
+    });
+  </script>
+</body>
+</html>
