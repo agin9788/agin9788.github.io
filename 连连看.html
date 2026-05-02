@@ -24,6 +24,9 @@
             background:rgba(0,0,0,0.3);
             display:flex;
             flex-direction:column;
+            /* 适配电脑端最小尺寸 */
+            min-width: 320px;
+            min-height: 480px;
         }
         .game-panel {
             flex:1;
@@ -32,6 +35,8 @@
             display:flex;
             flex-direction:column;
             gap:6px;
+            /* 防止内容溢出 */
+            overflow: hidden;
         }
 
         .top-row {
@@ -41,6 +46,9 @@
             background:#fff3e0;
             padding:6px 10px;
             border-radius:16px;
+            /* 适配小屏幕 */
+            flex-wrap: wrap;
+            gap: 4px;
         }
         .btn-row {
             display:flex;
@@ -49,15 +57,21 @@
             background:#fff3e0;
             padding:6px 10px;
             border-radius:16px;
+            /* 适配小屏幕按钮换行 */
+            flex-wrap: wrap;
         }
 
         .stats {
-            display:flex; gap:10px;
+            display:flex; 
+            gap:8px; /* 缩小间距适配小屏 */
             background:#2d2b26;
             padding:4px 8px;
             border-radius:20px;
             color:#ffefcf;
             font-weight:bold;
+            /* 适配小屏幕 */
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .stat {
             display:flex; align-items:center; gap:4px;
@@ -79,16 +93,25 @@
         }
         .btn {
             flex:1;
-            max-width:100px;
+            /* 适配电脑端按钮最大宽度，手机端自适应 */
+            min-width: 80px;
+            max-width: 120px;
             background:#fff0da;
             border:none;
             font-size:0.75rem;
             font-weight:bold;
-            padding:6px 8px;
+            padding:8px 10px; /* 增加点击区域 */
             border-radius:16px;
             color:#2c4a2e;
             box-shadow:0 1px 0 #b59a6b;
             touch-action:manipulation;
+            /* 电脑端hover效果 */
+            transition: all 0.2s ease;
+        }
+        /* 电脑端按钮hover */
+        .btn:hover {
+            background:#ffe8c0;
+            cursor: pointer;
         }
         .btn:active {
             transform:translateY(1px);
@@ -99,19 +122,31 @@
             color:#452b10;
             box-shadow:0 1px 0 #b46f2e;
         }
+        .btn-primary:hover {
+            background:#ffb858;
+        }
 
         .canvas-wrapper {
             flex:1;
             display:flex;
             justify-content:center;
             align-items:center;
+            /* 限制画布容器最大尺寸，适配电脑端 */
+            max-width: 80vh;
+            max-height: 80vh;
+            margin: 0 auto;
         }
         canvas {
             display:block;
-            width:100vw;
-            height:100vw;
+            /* 核心：自适应宽高，保持1:1比例 */
+            width: 100%;
+            height: 100%;
+            max-width: 500px; /* 电脑端最大宽度 */
+            max-height: 500px; /* 电脑端最大高度 */
             background:#faf0e1;
             border-radius:12px;
+            /* 电脑端鼠标样式 */
+            cursor: pointer;
         }
 
         .footer {
@@ -127,7 +162,55 @@
             padding:6px 16px;
             border-radius:20px;
             color:#ffeaac;
-            max-width: 80%;
+            max-width: 90%; /* 适配小屏幕 */
+            /* 防止文字溢出 */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 媒体查询：电脑端（宽度>768px）优化 */
+        @media (min-width: 768px) {
+            .stat {
+                font-size: 0.85rem;
+            }
+            .stat-label {
+                font-size: 0.7rem;
+            }
+            .stat-value {
+                font-size: 1.1rem;
+                min-width: 40px;
+            }
+            .btn {
+                font-size: 0.85rem;
+                padding: 10px 12px;
+                min-width: 100px;
+                max-width: 150px;
+            }
+            .message-area {
+                font-size: 0.85rem;
+                padding: 8px 20px;
+            }
+        }
+
+        /* 媒体查询：小屏手机（宽度<375px）优化 */
+        @media (max-width: 375px) {
+            .stats {
+                gap: 4px;
+            }
+            .stat-label {
+                font-size: 0.55rem;
+                padding: 2px 4px;
+            }
+            .stat-value {
+                font-size: 0.9rem;
+                min-width: 28px;
+            }
+            .btn {
+                min-width: 70px;
+                font-size: 0.7rem;
+                padding: 6px 8px;
+            }
         }
     </style>
 </head>
@@ -406,107 +489,157 @@
         gameMsgDiv.textContent='⚠️ 无可消除，请洗牌';
     }
 
+    // 核心修改：自适应画布尺寸
     function resizeAndRedraw(){
-        const size = window.innerWidth;
-        canvas.width = size;
-        canvas.height = size;
+        // 获取容器尺寸，保持1:1比例
+        const wrapper = document.querySelector('.canvas-wrapper');
+        const wrapperWidth = wrapper.clientWidth;
+        const wrapperHeight = wrapper.clientHeight;
+        const size = Math.min(wrapperWidth, wrapperHeight);
+        
+        // 设置画布实际像素尺寸（保证清晰度）
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = size * dpr;
+        canvas.height = size * dpr;
+        canvas.style.width = `${size}px`;
+        canvas.style.height = `${size}px`;
+        
+        // 缩放上下文，适配高清屏
         ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+        
         drawGrid();
     }
+
     function drawGrid(){
         if(!ctx)return;
-        const w=canvas.width, cell=w/COLS;
-        ctx.clearRect(0,0,w,w);
+        const w = canvas.clientWidth; // 使用可视宽度计算单元格
+        const cell = w / COLS;
+        
+        // 清空画布（使用实际像素尺寸）
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
         for(let r=0;r<ROWS;r++){
             for(let c=0;c<COLS;c++){
-                const x=c*cell, y=r*cell;
-                const v=grid[r][c];
+                const x = c * cell;
+                const y = r * cell;
+                const v = grid[r][c];
+                
                 ctx.beginPath();
-                ctx.rect(x,y,cell,cell);
-                ctx.fillStyle=v===null?'#d9cdb0':'#fff0db';
+                ctx.rect(x, y, cell, cell);
+                ctx.fillStyle = v === null ? '#d9cdb0' : '#fff0db';
                 ctx.fill();
-                ctx.strokeStyle='#e2cba4'; ctx.lineWidth=1; ctx.stroke();
+                ctx.strokeStyle = '#e2cba4'; 
+                ctx.lineWidth = 1; 
+                ctx.stroke();
+                
                 if(v!==null){
-                    const f=cell*0.45;
-                    ctx.font=`500 ${f}px sans-serif`;
-                    ctx.textAlign='center'; ctx.textBaseline='middle';
-                    ctx.fillStyle='#3a2410';
-                    ctx.fillText(v,x+cell/2,y+cell/2);
+                    const f = cell * 0.45;
+                    ctx.font = `500 ${f}px sans-serif`;
+                    ctx.textAlign = 'center'; 
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#3a2410';
+                    ctx.fillText(v, x + cell/2, y + cell/2);
                 }
+                
+                // 选中状态
                 if(selectedRow===r&&selectedCol===c&&v!==null){
-                    ctx.strokeStyle='#f7b32b'; ctx.lineWidth=3;
-                    ctx.strokeRect(x+3,y+3,cell-6,cell-6);
+                    ctx.strokeStyle = '#f7b32b'; 
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(x+3, y+3, cell-6, cell-6);
                 }
+                
+                // 提示状态
                 if((hintRow1===r&&hintCol1===c)||(hintRow2===r&&hintCol2===c)){
-                    ctx.strokeStyle='#ff6644'; ctx.lineWidth=2;
-                    ctx.strokeRect(x+2,y+2,cell-4,cell-4);
+                    ctx.strokeStyle = '#ff6644'; 
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x+2, y+2, cell-4, cell-4);
                 }
             }
         }
-        // ========== 核心修改：将全屏弹框改为居中小弹框 ==========
+
+        // 游戏结束弹框（自适应）
         if(!gameActive){
-            const w = canvas.width;
-            // 1. 计算小弹框的尺寸和位置 (宽度80%，高度40%，居中)
+            const w = canvas.clientWidth;
             const overlayWidth = w * 0.8;
             const overlayHeight = w * 0.4;
             const overlayX = (w - overlayWidth) / 2;
             const overlayY = (w - overlayHeight) / 2;
-            const cornerRadius = 20; // 圆角半径
+            const cornerRadius = 20;
 
-            // 2. 绘制一个更深色的半透明背景，让游戏内容在后方可见但被弱化
+            // 半透明背景
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, w, w);
+            ctx.fillRect(0, 0, canvas.width / ctx.getTransform().a, canvas.height / ctx.getTransform().a);
 
-            // 3. 绘制一个更精致的小弹框
-            // 3.1 绘制阴影
+            // 弹框阴影
             ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
             ctx.shadowBlur = 15;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 5;
-            // 3.2 绘制带圆角的矩形背景
+            
+            // 弹框背景
             ctx.beginPath();
             ctx.roundRect(overlayX, overlayY, overlayWidth, overlayHeight, cornerRadius);
-            ctx.fillStyle = 'rgba(30, 30, 35, 0.95)'; // 深色背景
+            ctx.fillStyle = 'rgba(30, 30, 35, 0.95)';
             ctx.fill();
-            // 3.3 绘制边框
+            
+            // 弹框边框
             ctx.strokeStyle = '#f7b32b';
             ctx.lineWidth = 3;
             ctx.stroke();
-            // 3.4 清除阴影效果，避免影响后续文字
+            
+            // 清除阴影
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
 
-            // 4. 绘制弹框内的文字
-            ctx.font = `bold ${w / 16}px system-ui`; // 字体大小略作调整
+            // 弹框文字（自适应大小）
+            const titleFontSize = w / 16;
+            ctx.font = `bold ${titleFontSize}px system-ui`;
             ctx.fillStyle = '#ffecb3';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            // 文字仍然绘制在画布正中心，恰好位于小弹框内部
             ctx.fillText(gameWinFlag ? '✨ 胜利 ✨' : '⏰ 时间到！', w / 2, w / 2);
 
-            // 5. （可选）在小弹框内添加一行辅助提示文字
-            ctx.font = `500 ${w / 28}px system-ui`;
+            // 辅助文字
+            const subFontSize = w / 28;
+            ctx.font = `500 ${subFontSize}px system-ui`;
             ctx.fillStyle = '#aaa';
             ctx.fillText('点击“新局”按钮重新开始', w / 2, w / 2 + w / 16);
         }
-        // ========== 修改结束 ==========
     }
 
+    // 适配电脑端鼠标点击和手机端触摸
     function handleTap(e){
         e.preventDefault();
         if(!gameActive||remainingPairs===0)return;
-        const rect=canvas.getBoundingClientRect();
-        const clientX=e.touches?e.touches[0].clientX:e.clientX;
-        const clientY=e.touches?e.touches[0].clientY:e.clientY;
-        const x=(clientX-rect.left)*(canvas.width/rect.width);
-        const y=(clientY-rect.top)*(canvas.height/rect.height);
-        const c=Math.floor(x/(canvas.width/COLS));
-        const r=Math.floor(y/(canvas.height/ROWS));
+        
+        const rect = canvas.getBoundingClientRect();
+        let clientX, clientY;
+        
+        // 区分触摸和鼠标事件
+        if(e.touches) {
+            clientX = e.touches[0].clientX;
+            clientY = e.touches[0].clientY;
+        } else {
+            clientX = e.clientX;
+            clientY = e.clientY;
+        }
+        
+        // 计算相对坐标（适配画布缩放）
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const x = (clientX - rect.left) * scaleX / (window.devicePixelRatio || 1);
+        const y = (clientY - rect.top) * scaleY / (window.devicePixelRatio || 1);
+        
+        const c = Math.floor(x / (canvas.clientWidth / COLS));
+        const r = Math.floor(y / (canvas.clientHeight / ROWS));
+        
         if(r<0||r>=ROWS||c<0||c>=COLS||grid[r][c]===null)return;
 
         if(selectedRow!==null&&selectedCol!==null){
             if(selectedRow===r&&selectedCol===c){
-                clearSelectedAndHint(); drawGrid();
+                clearSelectedAndHint(); 
+                drawGrid();
                 return;
             }
             if(canConnect(selectedRow,selectedCol,r,c)){
@@ -522,7 +655,8 @@
                 if(timeLeft<=0) gameLose();
             }
         }else{
-            selectedRow=r; selectedCol=c; playSfx('click');
+            selectedRow=r; selectedCol=c; 
+            playSfx('click');
             gameMsgDiv.textContent=`🔸 已选中`;
         }
         drawGrid();
@@ -553,12 +687,35 @@
         gameMsgDiv.textContent='✨ 新局开始';
     }
 
-    canvas.addEventListener('touchstart',e=>{e.preventDefault();handleTap(e);});
-    canvas.addEventListener('click',handleTap);
+    // 绑定多端交互事件
+    canvas.addEventListener('touchstart', e => {e.preventDefault(); handleTap(e);});
+    canvas.addEventListener('click', handleTap);
+    // 按钮增加hover效果（电脑端）
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            if(!btn.classList.contains('btn-primary')) {
+                btn.style.background = '#ffe8c0';
+            } else {
+                btn.style.background = '#ffb858';
+            }
+        });
+        btn.addEventListener('mouseleave', () => {
+            if(!btn.classList.contains('btn-primary')) {
+                btn.style.background = '#fff0da';
+            } else {
+                btn.style.background = '#ffcd7e';
+            }
+        });
+    });
     document.getElementById('shuffleBtn').onclick=shuffleGrid;
     document.getElementById('hintBtn').onclick=giveHint;
     document.getElementById('resetBtn').onclick=resetGame;
-    window.addEventListener('resize',resizeAndRedraw);
+    
+    // 监听窗口大小变化，实时适配
+    window.addEventListener('resize', resizeAndRedraw);
+    // 初始加载时适配
+    window.addEventListener('load', resizeAndRedraw);
+    
     resetGame();
 })();
 </script>
