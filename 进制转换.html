@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>进制转换工具 · Base Converter</title>
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --card-bg: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #5a6072;
+            --text-muted: #8b919e;
+            --border: #e2e6ed;
+            --border-focus: #5b8def;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --transition: 0.18s ease;
+
+            /* 进制主题色 */
+            --color-bin: #4a90d9;
+            --color-oct: #3da06d;
+            --color-dec: #e0883a;
+            --color-hex: #8c52c9;
+            --color-other: #6b7c93;
+
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'Courier New', 'Noto Sans Mono', monospace;
+            --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background: linear-gradient(160deg, #e9eef5 0%, #dce3ed 25%, #eef2f7 50%, #e3e9f1 75%, #f0f4f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+            color: var(--text);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 580px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* 标题 */
+        .header {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .header .icon {
+            font-size: 2.2rem;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #3b5998, #5b8def, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #e8edf5;
+            color: #5a6072;
+            padding: 5px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.03em;
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius-lg);
+            padding: 20px 22px;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border);
+            transition: box-shadow var(--transition);
+        }
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* 输入/输出标签 */
+        .field-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .field-label .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot.src {
+            background: var(--color-dec);
+        }
+        .dot.tgt {
+            background: var(--color-hex);
+        }
+
+        /* 输入框 */
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+        .input-field {
+            flex: 1;
+            min-width: 180px;
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
+            font-weight: 500;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            background: #fafbfc;
+            color: var(--text);
+            transition: all var(--transition);
+            outline: none;
+            letter-spacing: 0.03em;
+            -webkit-appearance: none;
+        }
+        .input-field:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 4px rgba(91, 141, 239, 0.10);
+            background: #fff;
+        }
+        .input-field.error {
+            border-color: #e05555;
+            box-shadow: 0 0 0 4px rgba(224, 85, 85, 0.08);
+            background: #fffafa;
+        }
+        .input-field.readonly {
+            background: #f6f8fb;
+            cursor: default;
+            user-select: all;
+            -webkit-user-select: all;
+        }
+        .input-field.readonly:focus {
+            border-color: var(--border);
+            box-shadow: none;
+        }
+
+        /* 进制选择器按钮组 */
+        .radix-group {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .radix-btn {
+            padding: 9px 14px;
+            border: 2px solid var(--border);
+            border-radius: 22px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 650;
+            font-size: 0.82rem;
+            font-family: var(--font-sans);
+            transition: all var(--transition);
+            white-space: nowrap;
+            color: #4a5058;
+            letter-spacing: 0.02em;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .radix-btn:hover {
+            background: #f5f7fa;
+            border-color: #c0c8d4;
+        }
+        .radix-btn:active {
+            transform: scale(0.95);
+        }
+        .radix-btn.active {
+            background: #eef3ff;
+            border-color: var(--border-focus);
+            color: #3b5fc0;
+            font-weight: 700;
+            box-shadow: 0 0 0 3px rgba(91, 141, 239, 0.12);
+        }
+        .radix-btn.custom-btn {
+            font-weight: 600;
+            color: #6b7c93;
+            border-style: dashed;
+        }
+        .radix-btn.custom-btn.active {
+            border-style: solid;
+            color: #5a40b0;
+            border-color: #8c52c9;
+            background: #f8f5ff;
+            box-shadow: 0 0 0 3px rgba(140, 82, 201, 0.10);
+        }
+        .radix-custom-input {
+            width: 50px;
+            padding: 9px 6px;
+            border: 2px solid var(--border);
+            border-radius: 22px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.82rem;
+            font-family: var(--font-mono);
+            outline: none;
+            transition: all var(--transition);
+            -webkit-appearance: none;
+            appearance: textfield;
+            background: #fff;
+            display: inline-block;
+        }
+        .radix-custom-input:focus {
+            border-color: #8c52c9;
+            box-shadow: 0 0 0 4px rgba(140, 82, 201, 0.08);
+        }
+        .radix-custom-input::-webkit-inner-spin-button,
+        .radix-custom-input::-webkit-outer-spin-button {
+            opacity: 1;
+        }
+
+        /* 交换按钮 */
+        .swap-row {
+            display: flex;
+            justify-content: center;
+            margin: -6px 0;
+            position: relative;
+            z-index: 2;
+        }
+        .swap-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+            color: #5a6072;
+        }
+        .swap-btn:hover {
+            background: #f0f4f8;
+            border-color: #b0bcc8;
+            transform: rotate(180deg);
+            color: #3b5fc0;
+        }
+        .swap-btn:active {
+            transform: rotate(180deg) scale(0.9);
+        }
+
+        /* 结果区 */
+        .result-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+        .result-display .input-field {
+            flex: 1;
+        }
+        .copy-btn {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 22px;
+            background: #fff;
+            cursor: pointer;
+            font-weight: 650;
+            font-size: 0.8rem;
+            font-family: var(--font-sans);
+            transition: all var(--transition);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #4a5058;
+            letter-spacing: 0.02em;
+        }
+        .copy-btn:hover {
+            background: #eef3ff;
+            border-color: var(--border-focus);
+            color: #3b5fc0;
+        }
+        .copy-btn.copied {
+            background: #e6f5ec;
+            border-color: #3da06d;
+            color: #2a7d4f;
+            animation: copyPop 0.5s ease;
+        }
+        @keyframes copyPop {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            40% {
+                transform: scale(1.06);
+            }
+        }
+
+        /* 常用进制展示 */
+        .common-radices {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .common-item {
+            background: #fafbfc;
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            border: 1.5px solid var(--border);
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+        .common-item:hover {
+            border-color: #c0c8d4;
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+        .common-item:active {
+            transform: scale(0.97);
+        }
+        .common-item .common-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .common-item .common-value {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text);
+            word-break: break-all;
+            line-height: 1.3;
+            max-height: 2.6em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .common-item.bin {
+            border-left: 3px solid var(--color-bin);
+        }
+        .common-item.bin .common-label {
+            color: var(--color-bin);
+        }
+        .common-item.oct {
+            border-left: 3px solid var(--color-oct);
+        }
+        .common-item.oct .common-label {
+            color: var(--color-oct);
+        }
+        .common-item.dec {
+            border-left: 3px solid var(--color-dec);
+        }
+        .common-item.dec .common-label {
+            color: var(--color-dec);
+        }
+        .common-item.hex {
+            border-left: 3px solid var(--color-hex);
+        }
+        .common-item.hex .common-label {
+            color: var(--color-hex);
+        }
+
+        .common-item .copy-hint {
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+        .common-item:hover .copy-hint {
+            opacity: 1;
+        }
+
+        .error-msg {
+            font-size: 0.75rem;
+            color: #d04545;
+            font-weight: 600;
+            min-height: 1.2em;
+            margin-top: 2px;
+            transition: all 0.2s;
+        }
+
+        .info-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-top: 2px;
+        }
+        .info-bar span {
+            background: #f5f6f9;
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .toast {
+            position: fixed;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2e38;
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            z-index: 999;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        @media (max-width: 500px) {
+            .container {
+                gap: 12px;
+                padding: 0;
+            }
+            .card {
+                padding: 14px 14px;
+                border-radius: var(--radius-md);
+            }
+            .input-field {
+                font-size: 1rem;
+                padding: 12px 14px;
+            }
+            .radix-btn {
+                padding: 7px 10px;
+                font-size: 0.73rem;
+                border-radius: 18px;
+            }
+            .common-radices {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
+            .common-item .common-value {
+                font-size: 0.78rem;
+            }
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .swap-btn {
+                width: 36px;
+                height: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="icon">🔢</span>
+            <h1>进制转换工具</h1>
+            <span class="badge">Base 2–36</span>
+        </div>
+
+        <div class="card" id="sourceCard">
+            <div class="field-label"><span class="dot src"></span> 源数字 · 输入</div>
+            <div class="input-row">
+                <input type="text" class="input-field" id="sourceInput" placeholder="输入数字..." autocomplete="off" spellcheck="false">
+            </div>
+            <div class="error-msg" id="sourceError"></div>
+            <div style="margin-top: 10px;">
+                <div class="field-label" style="margin-bottom:6px;">源进制</div>
+                <div class="radix-group" id="sourceRadixGroup">
+                    <button class="radix-btn" data-radix="2">二进制 (2)</button>
+                    <button class="radix-btn" data-radix="8">八进制 (8)</button>
+                    <button class="radix-btn active" data-radix="10">十进制 (10)</button>
+                    <button class="radix-btn" data-radix="16">十六进制 (16)</button>
+                    <button class="radix-btn custom-btn" data-radix="custom" id="sourceCustomBtn">自定义</button>
+                    <input type="number" class="radix-custom-input" id="sourceCustomInput" value="3" min="2" max="36" style="display:none;">
+                </div>
+            </div>
+        </div>
+
+        <div class="swap-row">
+            <button class="swap-btn" id="swapBtn" title="交换源/目标进制">⇅</button>
+        </div>
+
+        <div class="card" id="targetCard">
+            <div class="field-label"><span class="dot tgt"></span> 目标结果 · 输出</div>
+            <div class="result-display">
+                <input type="text" class="input-field readonly" id="targetOutput" readonly placeholder="转换结果..." spellcheck="false">
+                <button class="copy-btn" id="copyBtn">📋 复制</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <div class="field-label" style="margin-bottom:6px;">目标进制</div>
+                <div class="radix-group" id="targetRadixGroup">
+                    <button class="radix-btn" data-radix="2">二进制 (2)</button>
+                    <button class="radix-btn" data-radix="8">八进制 (8)</button>
+                    <button class="radix-btn" data-radix="10">十进制 (10)</button>
+                    <button class="radix-btn active" data-radix="16">十六进制 (16)</button>
+                    <button class="radix-btn custom-btn" data-radix="custom" id="targetCustomBtn">自定义</button>
+                    <input type="number" class="radix-custom-input" id="targetCustomInput" value="5" min="2" max="36" style="display:none;">
+                </div>
+            </div>
+            <div class="info-bar" id="infoBar"></div>
+        </div>
+
+        <div class="card">
+            <div class="field-label" style="margin-bottom:10px;">📊 常用进制一览 <span style="font-weight:400;font-size:0.7rem;color:var(--text-muted);">（点击复制）</span></div>
+            <div class="common-radices" id="commonRadices">
+                <div class="common-item bin" data-copy-key="bin">
+                    <div class="common-label">二进制 (2)</div>
+                    <div class="common-value" id="commonBin">—</div>
+                    <span class="copy-hint">点击复制</span>
+                </div>
+                <div class="common-item oct" data-copy-key="oct">
+                    <div class="common-label">八进制 (8)</div>
+                    <div class="common-value" id="commonOct">—</div>
+                    <span class="copy-hint">点击复制</span>
+                </div>
+                <div class="common-item dec" data-copy-key="dec">
+                    <div class="common-label">十进制 (10)</div>
+                    <div class="common-value" id="commonDec">—</div>
+                    <span class="copy-hint">点击复制</span>
+                </div>
+                <div class="common-item hex" data-copy-key="hex">
+                    <div class="common-label">十六进制 (16)</div>
+                    <div class="common-value" id="commonHex">—</div>
+                    <span class="copy-hint">点击复制</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        (function() {
+            // DOM 引用
+            const sourceInput = document.getElementById('sourceInput');
+            const targetOutput = document.getElementById('targetOutput');
+            const sourceError = document.getElementById('sourceError');
+            const infoBar = document.getElementById('infoBar');
+            const copyBtn = document.getElementById('copyBtn');
+            const swapBtn = document.getElementById('swapBtn');
+            const toast = document.getElementById('toast');
+
+            const sourceRadixGroup = document.getElementById('sourceRadixGroup');
+            const targetRadixGroup = document.getElementById('targetRadixGroup');
+            const sourceCustomInput = document.getElementById('sourceCustomInput');
+            const targetCustomInput = document.getElementById('targetCustomInput');
+
+            const commonBin = document.getElementById('commonBin');
+            const commonOct = document.getElementById('commonOct');
+            const commonDec = document.getElementById('commonDec');
+            const commonHex = document.getElementById('commonHex');
+
+            let sourceRadix = 10;
+            let targetRadix = 16;
+            let sourceIsCustom = false;
+            let targetIsCustom = false;
+            let sourceCustomValue = 3;
+            let targetCustomValue = 5;
+            let lastConvertedValue = null;
+            let toastTimer = null;
+
+            function showToast(msg) {
+                if (toastTimer) clearTimeout(toastTimer);
+                toast.textContent = msg;
+                toast.classList.add('show');
+                toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+            }
+
+            function charToDigit(ch) {
+                const code = ch.charCodeAt(0);
+                if (code >= 48 && code <= 57) return code - 48;
+                if (code >= 65 && code <= 90) return code - 55;
+                return -1;
+            }
+
+            function digitToChar(d) {
+                if (d >= 0 && d <= 9) return String.fromCharCode(48 + d);
+                if (d >= 10 && d <= 35) return String.fromCharCode(65 + d - 10);
+                return '?';
+            }
+
+            function parseBigInt(str, radix) {
+                if (radix < 2 || radix > 36) return null;
+                const cleaned = str.trim().replace(/\s+/g, '');
+                if (cleaned === '') return null;
+                const validChars = new Set();
+                for (let i = 0; i < radix; i++) validChars.add(digitToChar(i));
+                const upper = cleaned.toUpperCase();
+                for (const ch of upper) {
+                    if (!validChars.has(ch)) return null;
+                }
+                let result = 0n;
+                const bigRadix = BigInt(radix);
+                for (const ch of upper) {
+                    const digit = charToDigit(ch);
+                    if (digit === -1 || digit >= radix) return null;
+                    result = result * bigRadix + BigInt(digit);
+                }
+                return result;
+            }
+
+            function bigIntToBase(num, radix) {
+                if (radix < 2 || radix > 36) return '';
+                if (num === 0n) return '0';
+                const bigRadix = BigInt(radix);
+                let n = num < 0n ? -num : num;
+                const digits = [];
+                while (n > 0n) {
+                    digits.push(digitToChar(Number(n % bigRadix)));
+                    n = n / bigRadix;
+                }
+                return (num < 0n ? '-' : '') + digits.reverse().join('');
+            }
+
+            function getEffectiveRadix(isCustom, customVal, defaultVal) {
+                if (isCustom) {
+                    return Math.max(2, Math.min(36, parseInt(customVal) || defaultVal));
+                }
+                return defaultVal;
+            }
+
+            function performConversion() {
+                const effectiveSrc = getEffectiveRadix(sourceIsCustom, sourceCustomValue, sourceRadix);
+                const effectiveTgt = getEffectiveRadix(targetIsCustom, targetCustomValue, targetRadix);
+                const raw = sourceInput.value;
+                sourceError.textContent = '';
+                sourceInput.classList.remove('error');
+
+                if (raw.trim() === '') {
+                    targetOutput.value = '';
+                    lastConvertedValue = null;
+                    updateCommonRadices(null);
+                    updateInfoBar(null, effectiveSrc, effectiveTgt);
+                    return;
+                }
+
+                const parsed = parseBigInt(raw, effectiveSrc);
+                if (parsed === null) {
+                    sourceError.textContent = '⚠️ 输入包含无效字符，请检查当前进制';
+                    sourceInput.classList.add('error');
+                    targetOutput.value = '';
+                    lastConvertedValue = null;
+                    updateCommonRadices(null);
+                    updateInfoBar(null, effectiveSrc, effectiveTgt);
+                    return;
+                }
+
+                lastConvertedValue = parsed;
+                const resultStr = bigIntToBase(parsed, effectiveTgt);
+                targetOutput.value = resultStr;
+                updateCommonRadices(parsed);
+                updateInfoBar(parsed, effectiveSrc, effectiveTgt);
+            }
+
+            function updateCommonRadices(bigNum) {
+                const dash = '—';
+                commonBin.textContent = bigNum !== null ? bigIntToBase(bigNum, 2) : dash;
+                commonOct.textContent = bigNum !== null ? bigIntToBase(bigNum, 8) : dash;
+                commonDec.textContent = bigNum !== null ? bigIntToBase(bigNum, 10) : dash;
+                commonHex.textContent = bigNum !== null ? bigIntToBase(bigNum, 16) : dash;
+            }
+
+            function updateInfoBar(bigNum, srcRad, tgtRad) {
+                if (bigNum === null) {
+                    infoBar.innerHTML = '<span>等待输入…</span>';
+                    return;
+                }
+                const decStr = bigIntToBase(bigNum, 10);
+                const binStr = bigIntToBase(bigNum, 2);
+                const hexStr = bigIntToBase(bigNum, 16);
+                infoBar.innerHTML = `
+                    <span>🔢 十进制值: <strong>${decStr}</strong></span>
+                    <span>📏 二进制位数: <strong>${binStr.length} bit</strong></span>
+                    <span>📐 十六进制位数: <strong>${hexStr.length}</strong></span>
+                `;
+            }
+
+            function copyTextToClipboard(text) {
+                return new Promise((resolve) => {
+                    // 优先使用 Clipboard API
+                    if (navigator.clipboard && window.isSecureContext) {
+                        navigator.clipboard.writeText(text).then(() => resolve(true)).catch(() => fallbackCopy());
+                    } else {
+                        fallbackCopy();
+                    }
+
+                    function fallbackCopy() {
+                        const textarea = document.createElement('textarea');
+                        textarea.value = text;
+                        textarea.style.position = 'fixed';
+                        textarea.style.left = '-9999px';
+                        textarea.style.top = '-9999px';
+                        document.body.appendChild(textarea);
+                        textarea.focus();
+                        textarea.select();
+                        let success = false;
+                        try {
+                            success = document.execCommand('copy');
+                        } catch (e) { /* ignore */ }
+                        document.body.removeChild(textarea);
+                        resolve(success);
+                    }
+                });
+            }
+
+            function showCopyFeedback(success) {
+                if (success) {
+                    copyBtn.classList.add('copied');
+                    copyBtn.innerHTML = '✅ 已复制';
+                    showToast('✅ 已复制到剪贴板');
+                    setTimeout(() => {
+                        copyBtn.classList.remove('copied');
+                        copyBtn.innerHTML = '📋 复制';
+                    }, 1400);
+                } else {
+                    showToast('⚠️ 复制失败，请手动选择结果');
+                }
+            }
+
+            copyBtn.addEventListener('click', async () => {
+                const text = targetOutput.value;
+                if (!text) {
+                    showToast('⚠️ 没有可复制的结果');
+                    return;
+                }
+                const success = await copyTextToClipboard(text);
+                showCopyFeedback(success);
+            });
+
+            document.getElementById('commonRadices').addEventListener('click', async (e) => {
+                const item = e.target.closest('.common-item');
+                if (!item) return;
+                const key = item.dataset.copyKey;
+                let textToCopy = '';
+                switch (key) {
+                    case 'bin': textToCopy = commonBin.textContent; break;
+                    case 'oct': textToCopy = commonOct.textContent; break;
+                    case 'dec': textToCopy = commonDec.textContent; break;
+                    case 'hex': textToCopy = commonHex.textContent; break;
+                }
+                if (!textToCopy || textToCopy === '—') {
+                    showToast('⚠️ 没有可复制的内容');
+                    return;
+                }
+                const success = await copyTextToClipboard(textToCopy);
+                if (success) {
+                    showToast(`✅ 已复制: ${textToCopy}`);
+                    item.style.background = '#eef8f0';
+                    setTimeout(() => { item.style.background = ''; }, 500);
+                } else {
+                    showToast('⚠️ 复制失败，请手动选择');
+                }
+            });
+
+            function updateRadixUI() {
+                const updateGroup = (group, isCustom, customVal, defaultVal, customInput) => {
+                    const buttons = group.querySelectorAll('.radix-btn');
+                    const effective = getEffectiveRadix(isCustom, customVal, defaultVal);
+                    buttons.forEach(btn => {
+                        const r = btn.dataset.radix;
+                        btn.classList.remove('active');
+                        if (r === 'custom' && isCustom) btn.classList.add('active');
+                        else if (r !== 'custom' && parseInt(r) === effective && !isCustom) btn.classList.add('active');
+                    });
+                    customInput.style.display = isCustom ? 'inline-block' : 'none';
+                    if (isCustom) customInput.value = customVal;
+                };
+
+                updateGroup(sourceRadixGroup, sourceIsCustom, sourceCustomValue, sourceRadix, sourceCustomInput);
+                updateGroup(targetRadixGroup, targetIsCustom, targetCustomValue, targetRadix, targetCustomInput);
+                const examples = { 2: '例: 10101100', 8: '例: 377', 10: '例: 2024', 16: '例: 1A3F' };
+                const effSrc = getEffectiveRadix(sourceIsCustom, sourceCustomValue, sourceRadix);
+                sourceInput.placeholder = examples[effSrc] || `例: (${effSrc}进制数字)`;
+            }
+
+            sourceRadixGroup.addEventListener('click', e => {
+                const btn = e.target.closest('.radix-btn');
+                if (!btn) return;
+                const r = btn.dataset.radix;
+                if (r === 'custom') {
+                    sourceIsCustom = true;
+                    sourceCustomValue = Math.max(2, Math.min(36, parseInt(sourceCustomInput.value) || 3));
+                } else {
+                    sourceIsCustom = false;
+                    sourceRadix = parseInt(r);
+                }
+                updateRadixUI();
+                performConversion();
+            });
+
+            targetRadixGroup.addEventListener('click', e => {
+                const btn = e.target.closest('.radix-btn');
+                if (!btn) return;
+                const r = btn.dataset.radix;
+                if (r === 'custom') {
+                    targetIsCustom = true;
+                    targetCustomValue = Math.max(2, Math.min(36, parseInt(targetCustomInput.value) || 5));
+                } else {
+                    targetIsCustom = false;
+                    targetRadix = parseInt(r);
+                }
+                updateRadixUI();
+                performConversion();
+            });
+
+            [sourceCustomInput, targetCustomInput].forEach(inp => {
+                inp.addEventListener('input', () => {
+                    let v = parseInt(inp.value);
+                    if (isNaN(v) || v < 2) v = 2;
+                    if (v > 36) v = 36;
+                    inp.value = v;
+                    if (inp === sourceCustomInput) sourceCustomValue = v;
+                    else targetCustomValue = v;
+                    updateRadixUI();
+                    performConversion();
+                });
+                inp.addEventListener('blur', () => {
+                    let v = parseInt(inp.value);
+                    if (isNaN(v) || v < 2) v = 2;
+                    if (v > 36) v = 36;
+                    inp.value = v;
+                    if (inp === sourceCustomInput) sourceCustomValue = v;
+                    else targetCustomValue = v;
+                    updateRadixUI();
+                    performConversion();
+                });
+            });
+
+            sourceInput.addEventListener('input', performConversion);
+
+            swapBtn.addEventListener('click', () => {
+                [sourceRadix, targetRadix] = [targetRadix, sourceRadix];
+                [sourceIsCustom, targetIsCustom] = [targetIsCustom, sourceIsCustom];
+                [sourceCustomValue, targetCustomValue] = [targetCustomValue, sourceCustomValue];
+                updateRadixUI();
+                performConversion();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+                    e.preventDefault();
+                    swapBtn.click();
+                }
+                if (e.key === 'Escape' && document.activeElement === sourceInput) {
+                    sourceInput.value = '';
+                    performConversion();
+                }
+            });
+
+            updateRadixUI();
+            performConversion();
+            setTimeout(() => sourceInput.focus(), 300);
+        })();
+    </script>
+</body>
+</html>

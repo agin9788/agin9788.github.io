@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>跳跃恐龙 · 精美跑酷</title>
+    <style>
+        :root {
+            --panel-bg: #fcf9f0;
+            --text: #4a3f2f;
+            --accent: #e8873a;
+            --btn-bg: #6b8c5c;
+            --btn-shadow: #4a6340;
+            --gold: #d4a030;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: linear-gradient(160deg, #3a3440 0%, #2a2530 30%, #1f1d26 60%, #25212a 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+            padding: 14px;
+        }
+
+        .game-wrapper {
+            background: var(--panel-bg);
+            border-radius: 28px;
+            padding: 18px 18px 20px;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 255, 255, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            max-width: 840px;
+            width: 100%;
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border-radius: 20px;
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.35),
+                inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+            cursor: pointer;
+            width: 100%;
+            height: auto;
+            max-width: 800px;
+            aspect-ratio: 800/300;
+        }
+
+        .info-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 14px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .score-box {
+            background: #3d3630;
+            padding: 8px 18px;
+            border-radius: 50px;
+            color: #f0d78c;
+            font-weight: 700;
+            font-size: 0.85rem;
+            letter-spacing: 0.03em;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3), 0 2px 0 #2a2420;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .score-box span {
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin-left: 4px;
+            color: #ffd966;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'Consolas', 'Courier New', monospace;
+            min-width: 48px;
+            text-align: right;
+        }
+        .score-box .icon-label {
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            background: var(--btn-bg);
+            border: none;
+            color: #fefee8;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.08s ease;
+            box-shadow: 0 3px 0 var(--btn-shadow), 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 var(--btn-shadow), 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .btn.restart-btn {
+            background: #e8873a;
+            box-shadow: 0 3px 0 #b85e20, 0 4px 8px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+            padding: 9px 22px;
+        }
+        .btn.sound-btn {
+            background: #5c7a6e;
+            box-shadow: 0 3px 0 #3d554a, 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .tip {
+            font-size: 0.7rem;
+            color: #8c8578;
+            background: #f3efe2;
+            padding: 5px 14px;
+            border-radius: 50px;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 580px) {
+            .game-wrapper {
+                padding: 10px 10px 14px;
+                border-radius: 22px;
+            }
+            canvas {
+                border-radius: 14px;
+            }
+            .score-box {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+            .score-box span {
+                font-size: 1rem;
+                min-width: 36px;
+            }
+            .btn {
+                padding: 6px 14px;
+                font-size: 0.75rem;
+                border-radius: 40px;
+            }
+            .btn.restart-btn {
+                padding: 7px 16px;
+                font-size: 0.8rem;
+            }
+            .tip {
+                font-size: 0.65rem;
+                padding: 4px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="300"></canvas>
+        <div class="info-panel">
+            <div class="score-box"><span class="icon-label">🏆</span> SCORE <span id="scoreValue">0</span></div>
+            <div class="score-box"><span class="icon-label">🥇</span> BEST <span id="bestValue">0</span></div>
+            <button class="btn restart-btn" id="restartButton">🦖 重来</button>
+            <button class="btn sound-btn" id="soundToggleBtn">🔊 音效</button>
+            <div class="tip">␣ / ↑ 跳跃 · 点击画面</div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // ==================== DOM & Canvas ====================
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreSpan = document.getElementById('scoreValue');
+            const bestSpan = document.getElementById('bestValue');
+            const soundToggleBtn = document.getElementById('soundToggleBtn');
+
+            // ==================== 音效系统 ====================
+            let soundEnabled = true;
+            let audioCtx = null;
+
+            function initAudio() {
+                if (audioCtx) return;
+                try { audioCtx = new(window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+            }
+
+            function playBeep(freq, dur, vol, type = 'square') {
+                if (!soundEnabled || !audioCtx) return;
+                if (audioCtx.state === 'suspended') audioCtx.resume().catch(e => {});
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(freq, now);
+                gain.gain.setValueAtTime(vol, now);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+                osc.start(now);
+                osc.stop(now + dur);
+            }
+
+            function sfxJump() { playBeep(700, 0.1, 0.18, 'square');
+                playBeep(950, 0.08, 0.12, 'sine', 0.03); }
+
+            function sfxScore() { playBeep(1318, 0.08, 0.16, 'sine');
+                playBeep(1568, 0.06, 0.1, 'sine', 0.04); }
+
+            function sfxCollision() { playBeep(180, 0.28, 0.3, 'sawtooth');
+                playBeep(80, 0.35, 0.25, 'triangle', 0.05); }
+
+            function sfxLand() { playBeep(280, 0.06, 0.1, 'sine'); }
+
+            function toggleSound() {
+                soundEnabled = !soundEnabled;
+                soundToggleBtn.innerHTML = soundEnabled ? '🔊 音效' : '🔇 静音';
+                if (soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(e => {});
+            }
+
+            // ==================== 游戏状态 ====================
+            let gameRunning = true;
+            let gameOverFlag = false;
+            let score = 0;
+            let bestScore = 0;
+            let lastScoreFloor = 0;
+            let frameCounter = 0;
+            let speed = 5;
+            let spawnGap = 70;
+            let obstacles = [];
+            let dustParticles = [];
+            let wasJumping = false; // 检测落地
+
+            // 加载最高分
+            try {
+                const saved = localStorage.getItem('dinoBestV2');
+                if (saved && !isNaN(parseInt(saved))) bestScore = parseInt(saved);
+                bestSpan.innerText = bestScore;
+            } catch (e) {}
+
+            // ==================== 恐龙参数 ====================
+            const DINO_W = 34;
+            const DINO_H = 44;
+            const GROUND_Y = canvas.height - 45;
+            let dinoX = 70;
+            let dinoY = GROUND_Y - DINO_H;
+            let dinoYVelocity = 0;
+            let isJumping = false;
+            const GRAVITY = 0.9;
+            const JUMP_POWER = -12;
+
+            // ==================== 辅助 ====================
+            function updateScoreUI() {
+                const fs = Math.floor(score);
+                scoreSpan.innerText = fs;
+                if (fs > bestScore) {
+                    bestScore = fs;
+                    bestSpan.innerText = bestScore;
+                    try { localStorage.setItem('dinoBestV2', bestScore); } catch (e) {}
+                }
+                if (fs > lastScoreFloor && fs > 0 && gameRunning && !gameOverFlag) {
+                    sfxScore();
+                }
+                lastScoreFloor = fs;
+            }
+
+            function resetGame() {
+                gameRunning = true;
+                gameOverFlag = false;
+                score = 0;
+                lastScoreFloor = 0;
+                updateScoreUI();
+                dinoY = GROUND_Y - DINO_H;
+                dinoYVelocity = 0;
+                isJumping = false;
+                wasJumping = false;
+                obstacles = [];
+                dustParticles = [];
+                frameCounter = 0;
+                speed = 5;
+                spawnGap = 70;
+            }
+
+            function spawnObstacle() {
+                const type = Math.floor(Math.random() * 3);
+                let w, h;
+                if (type === 0) { w = 18;
+                    h = 34; } else if (type === 1) { w = 22;
+                    h = 44; } else { w = 30;
+                    h = 42; }
+                obstacles.push({
+                    x: canvas.width,
+                    y: GROUND_Y - h,
+                    width: w,
+                    height: h,
+                    type: type,
+                    bobOffset: Math.random() * Math.PI * 2,
+                });
+            }
+
+            function checkCollision() {
+                const dr = {
+                    x: dinoX + 5,
+                    y: dinoY + 5,
+                    w: DINO_W - 10,
+                    h: DINO_H - 10
+                };
+                for (let obs of obstacles) {
+                    const or = {
+                        x: obs.x + 4,
+                        y: obs.y + 4,
+                        w: obs.width - 8,
+                        h: obs.height - 6
+                    };
+                    if (dr.x < or.x + or.w && dr.x + dr.w > or.x &&
+                        dr.y < or.y + or.h && dr.y + dr.h > or.y) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function spawnDust(x, y, count) {
+                for (let i = 0; i < count; i++) {
+                    dustParticles.push({
+                        x: x + (Math.random() - 0.5) * 20,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: -(Math.random() * 1.8 + 0.5),
+                        life: Math.random() * 0.5 + 0.25,
+                        maxLife: 0.75,
+                        size: Math.random() * 2.5 + 1,
+                    });
+                }
+                if (dustParticles.length > 40) dustParticles.splice(0, dustParticles.length - 40);
+            }
+
+            // ==================== 更新逻辑 ====================
+            function updateGame() {
+                if (!gameRunning) return;
+
+                // 跳跃物理
+                const prevIsJumping = isJumping;
+                if (isJumping) {
+                    dinoYVelocity += GRAVITY;
+                    dinoY += dinoYVelocity;
+                    if (dinoY >= GROUND_Y - DINO_H) {
+                        dinoY = GROUND_Y - DINO_H;
+                        isJumping = false;
+                        dinoYVelocity = 0;
+                        if (prevIsJumping && !isJumping) {
+                            sfxLand();
+                            spawnDust(dinoX + DINO_W / 2, GROUND_Y - 2, 8);
+                        }
+                    }
+                    if (dinoY < 0) { dinoY = 0; if (dinoYVelocity < 0) dinoYVelocity = 0; }
+                } else {
+                    dinoY = GROUND_Y - DINO_H;
+                }
+                wasJumping = isJumping;
+
+                // 障碍物移动
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    obstacles[i].x -= speed;
+                    if (obstacles[i].x + obstacles[i].width < -20) {
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // 生成
+                if (frameCounter >= spawnGap) {
+                    frameCounter = 0;
+                    const dynamicGap = Math.max(38, 70 - Math.floor(score / 300));
+                    if (Math.random() < 0.68) spawnObstacle();
+                    spawnGap = dynamicGap;
+                } else {
+                    frameCounter++;
+                }
+
+                // 难度递增
+                speed = Math.min(12, 5 + Math.floor(score / 450));
+                score += 0.2;
+                updateScoreUI();
+
+                // 更新灰尘
+                for (let i = dustParticles.length - 1; i >= 0; i--) {
+                    const dp = dustParticles[i];
+                    dp.x += dp.vx;
+                    dp.y += dp.vy;
+                    dp.life -= 0.025;
+                    if (dp.life <= 0) dustParticles.splice(i, 1);
+                }
+
+                // 碰撞检测
+                if (checkCollision()) {
+                    gameRunning = false;
+                    gameOverFlag = true;
+                    sfxCollision();
+                    spawnDust(dinoX + DINO_W / 2, dinoY + DINO_H / 2, 18);
+                }
+            }
+
+            // ==================== 绘制函数（美化版） ====================
+            function drawSky() {
+                const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+                grad.addColorStop(0, '#7ec8e3');
+                grad.addColorStop(0.35, '#b8dff0');
+                grad.addColorStop(0.7, '#dceef5');
+                grad.addColorStop(1, '#e8e0cc');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, GROUND_Y);
+            }
+
+            function drawSun() {
+                const sx = 680;
+                const sy = 48;
+                // 光晕
+                for (let i = 4; i >= 0; i--) {
+                    const alpha = 0.06 + i * 0.04;
+                    const r = 32 + i * 18;
+                    ctx.fillStyle = `rgba(255,240,210,${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                // 太阳主体
+                const sunGrad = ctx.createRadialGradient(sx - 3, sy - 3, 4, sx, sy, 22);
+                sunGrad.addColorStop(0, '#fffef5');
+                sunGrad.addColorStop(0.5, '#ffe8b0');
+                sunGrad.addColorStop(1, '#fcc870');
+                ctx.fillStyle = sunGrad;
+                ctx.beginPath();
+                ctx.arc(sx, sy, 20, 0, Math.PI * 2);
+                ctx.fill();
+                // 高光
+                ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                ctx.beginPath();
+                ctx.arc(sx - 5, sy - 6, 7, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            function drawClouds() {
+                const time = Date.now() / 5000;
+                const cloudDefs = [
+                    { baseX: 120, baseY: 35, scale: 1.1, speed: 0.7 },
+                    { baseX: 380, baseY: 55, scale: 0.85, speed: 0.55 },
+                    { baseX: 580, baseY: 28, scale: 1.3, speed: 0.65 },
+                    { baseX: 720, baseY: 62, scale: 0.7, speed: 0.5 },
+                    { baseX: 200, baseY: 70, scale: 0.6, speed: 0.45 },
+                ];
+
+                cloudDefs.forEach(cd => {
+                    const cx = ((cd.baseX + time * cd.speed * 45) % (canvas.width + 200)) - 100;
+                    const cy = cd.baseY;
+                    const s = cd.scale;
+
+                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 22 * s, 0, Math.PI * 2);
+                    ctx.arc(cx + 26 * s, cy - 8 * s, 18 * s, 0, Math.PI * 2);
+                    ctx.arc(cx + 48 * s, cy + 2 * s, 20 * s, 0, Math.PI * 2);
+                    ctx.arc(cx + 30 * s, cy + 6 * s, 16 * s, 0, Math.PI * 2);
+                    ctx.arc(cx + 12 * s, cy - 2 * s, 15 * s, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 云朵高光
+                    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+                    ctx.beginPath();
+                    ctx.arc(cx + 6 * s, cy - 6 * s, 10 * s, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            function drawFarHills() {
+                ctx.fillStyle = '#c5d8b5';
+                ctx.beginPath();
+                ctx.moveTo(-20, GROUND_Y + 5);
+                ctx.quadraticCurveTo(80, GROUND_Y - 55, 200, GROUND_Y - 20);
+                ctx.quadraticCurveTo(320, GROUND_Y - 70, 440, GROUND_Y - 15);
+                ctx.quadraticCurveTo(560, GROUND_Y - 50, 680, GROUND_Y - 25);
+                ctx.quadraticCurveTo(780, GROUND_Y - 60, 860, GROUND_Y + 5);
+                ctx.lineTo(860, GROUND_Y + 6);
+                ctx.lineTo(-20, GROUND_Y + 6);
+                ctx.closePath();
+                ctx.fill();
+
+                // 更近的山
+                ctx.fillStyle = '#b5c9a3';
+                ctx.beginPath();
+                ctx.moveTo(-30, GROUND_Y + 3);
+                ctx.quadraticCurveTo(150, GROUND_Y - 38, 300, GROUND_Y - 5);
+                ctx.quadraticCurveTo(450, GROUND_Y - 48, 600, GROUND_Y - 10);
+                ctx.quadraticCurveTo(750, GROUND_Y - 35, 850, GROUND_Y + 3);
+                ctx.lineTo(850, GROUND_Y + 4);
+                ctx.lineTo(-30, GROUND_Y + 4);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            function drawGround() {
+                // 主地面
+                const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
+                groundGrad.addColorStop(0, '#dcc8a0');
+                groundGrad.addColorStop(0.08, '#d4bc8c');
+                groundGrad.addColorStop(0.5, '#c4a878');
+                groundGrad.addColorStop(1, '#a89068');
+                ctx.fillStyle = groundGrad;
+                ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+                // 地面顶部草皮线
+                ctx.fillStyle = '#9cba70';
+                ctx.fillRect(0, GROUND_Y - 1, canvas.width, 5);
+                ctx.fillStyle = '#b5cf8a';
+                ctx.fillRect(0, GROUND_Y - 2, canvas.width, 2);
+
+                // 滚动纹理小石子
+                const scrollOffset = (frameCounter * speed * 0.15) % 40;
+                ctx.fillStyle = '#bfa578';
+                for (let i = -40; i < canvas.width + 60; i += 40) {
+                    const rx = i + scrollOffset;
+                    ctx.beginPath();
+                    ctx.arc(rx, GROUND_Y + 10, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(rx + 18, GROUND_Y + 20, 4.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // 小草
+                const grassOffset = (frameCounter * speed * 0.2) % 35;
+                ctx.fillStyle = '#8aaf55';
+                for (let i = -35; i < canvas.width + 70; i += 35) {
+                    const gx = i + grassOffset;
+                    const gh = 6 + Math.sin(i * 0.5) * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(gx, GROUND_Y - 2);
+                    ctx.quadraticCurveTo(gx + 3, GROUND_Y - gh, gx + 7, GROUND_Y - 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(gx + 5, GROUND_Y - 2);
+                    ctx.quadraticCurveTo(gx + 8, GROUND_Y - gh - 2, gx + 11, GROUND_Y - 2);
+                    ctx.fill();
+                }
+
+                // 小野花
+                const flowerOffset = (frameCounter * speed * 0.18) % 55;
+                ctx.fillStyle = '#f5e68c';
+                for (let i = -55; i < canvas.width + 110; i += 55) {
+                    const fx = i + flowerOffset;
+                    const fy = GROUND_Y - 2;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy - 2, 2.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#f9f0b8';
+                    ctx.beginPath();
+                    ctx.arc(fx + 1, fy - 3, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#f5e68c';
+                }
+            }
+
+            function drawDinoShadow() {
+                const shadowAlpha = isJumping ? Math.max(0.08, 0.3 - (GROUND_Y - DINO_H - dinoY) * 0.003) : 0.35;
+                const shadowScale = isJumping ? Math.max(0.5, 1 - (GROUND_Y - DINO_H - dinoY) * 0.005) : 1;
+                const shadowY = GROUND_Y - 1;
+                const shadowX = dinoX + DINO_W / 2;
+                ctx.fillStyle = `rgba(80,50,30,${shadowAlpha})`;
+                ctx.beginPath();
+                ctx.ellipse(shadowX, shadowY, DINO_W * 0.4 * shadowScale, 4 * shadowScale, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            function drawDino() {
+                if (gameOverFlag && Math.floor(Date.now() / 300) % 2 === 0) return; // 闪烁效果
+
+                const dx = dinoX;
+                const dy = dinoY;
+                const dw = DINO_W;
+                const dh = DINO_H;
+                const legSwing = Math.sin(frameCounter * 0.4) * 5;
+                const eyeClosed = gameOverFlag;
+
+                ctx.save();
+
+                // --- 尾巴 ---
+                ctx.fillStyle = '#4a8c3f';
+                ctx.beginPath();
+                ctx.moveTo(dx + 2, dy + 16);
+                ctx.quadraticCurveTo(dx - 10, dy + 10, dx - 6, dy + 28);
+                ctx.quadraticCurveTo(dx - 2, dy + 32, dx + 3, dy + 22);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#3d7235';
+                ctx.beginPath();
+                ctx.moveTo(dx + 3, dy + 18);
+                ctx.quadraticCurveTo(dx - 5, dy + 14, dx - 3, dy + 26);
+                ctx.quadraticCurveTo(dx + 1, dy + 28, dx + 4, dy + 22);
+                ctx.closePath();
+                ctx.fill();
+
+                // --- 后腿（远端） ---
+                ctx.fillStyle = '#3d7235';
+                ctx.beginPath();
+                ctx.roundRect(dx + 4, dy + 28 - legSwing * 0.5, 8, 14, 4);
+                ctx.fill();
+                ctx.fillStyle = '#5c3d28';
+                ctx.beginPath();
+                ctx.roundRect(dx + 3, dy + 36 - legSwing * 0.5, 10, 6, 3);
+                ctx.fill();
+
+                // --- 身体 ---
+                const bodyGrad = ctx.createLinearGradient(0, dy + 6, 0, dy + 34);
+                bodyGrad.addColorStop(0, '#5ea84d');
+                bodyGrad.addColorStop(0.5, '#4a9440');
+                bodyGrad.addColorStop(1, '#3b7833');
+                ctx.fillStyle = bodyGrad;
+                ctx.beginPath();
+                ctx.roundRect(dx + 3, dy + 8, 27, 24, 10);
+                ctx.fill();
+
+                // --- 肚皮 ---
+                const bellyGrad = ctx.createLinearGradient(0, dy + 16, 0, dy + 30);
+                bellyGrad.addColorStop(0, '#d4e8a0');
+                bellyGrad.addColorStop(1, '#b8d880');
+                ctx.fillStyle = bellyGrad;
+                ctx.beginPath();
+                ctx.roundRect(dx + 7, dy + 17, 19, 14, 7);
+                ctx.fill();
+
+                // --- 背刺 ---
+                ctx.fillStyle = '#36702e';
+                const spines = [
+                    { sx: dx + 10, sy: dy + 6, sh: 10 },
+                    { sx: dx + 17, sy: dy + 4, sh: 12 },
+                    { sx: dx + 24, sy: dy + 7, sh: 9 },
+                ];
+                spines.forEach(sp => {
+                    ctx.beginPath();
+                    ctx.moveTo(sp.sx, sp.sy);
+                    ctx.lineTo(sp.sx + 4, sp.sy - sp.sh);
+                    ctx.lineTo(sp.sx + 8, sp.sy);
+                    ctx.closePath();
+                    ctx.fill();
+                });
+
+                // --- 前腿（近端） ---
+                ctx.fillStyle = '#4a8c3f';
+                ctx.beginPath();
+                ctx.roundRect(dx + 16, dy + 28 + legSwing * 0.5, 8, 14, 4);
+                ctx.fill();
+                ctx.fillStyle = '#5c3d28';
+                ctx.beginPath();
+                ctx.roundRect(dx + 15, dy + 36 + legSwing * 0.5, 10, 6, 3);
+                ctx.fill();
+
+                // --- 小短手 ---
+                ctx.fillStyle = '#4a8c3f';
+                ctx.beginPath();
+                ctx.arc(dx + 26, dy + 16, 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#5ea84d';
+                ctx.beginPath();
+                ctx.arc(dx + 27, dy + 15, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // --- 头部 ---
+                const headGrad = ctx.createRadialGradient(dx + 26, dy + 7, 3, dx + 26, dy + 11, 13);
+                headGrad.addColorStop(0, '#6dbd5a');
+                headGrad.addColorStop(0.7, '#4a9440');
+                headGrad.addColorStop(1, '#3b7833');
+                ctx.fillStyle = headGrad;
+                ctx.beginPath();
+                ctx.arc(dx + 24, dy + 9, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // --- 小冠 ---
+                ctx.fillStyle = '#e85d3a';
+                ctx.beginPath();
+                ctx.moveTo(dx + 22, dy + 0);
+                ctx.quadraticCurveTo(dx + 24, dy - 8, dx + 28, dy - 2);
+                ctx.quadraticCurveTo(dx + 30, dy + 2, dx + 26, dy + 3);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#f07050';
+                ctx.beginPath();
+                ctx.arc(dx + 25, dy - 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // --- 眼睛 ---
+                const eyeX = dx + 28;
+                const eyeY = dy + 5;
+                // 眼白
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(eyeX, eyeY, 6.5, 0, Math.PI * 2);
+                ctx.fill();
+                // 瞳孔
+                if (eyeClosed) {
+                    // X_X 死亡眼
+                    ctx.strokeStyle = '#1a1a1a';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(eyeX - 3, eyeY - 3);
+                    ctx.lineTo(eyeX + 3, eyeY + 3);
+                    ctx.moveTo(eyeX + 3, eyeY - 3);
+                    ctx.lineTo(eyeX - 3, eyeY + 3);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                } else {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.beginPath();
+                    ctx.arc(eyeX + 1, eyeY, 3.2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // 高光
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(eyeX + 2.5, eyeY - 2, 1.6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(eyeX - 1, eyeY - 1.5, 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- 微笑嘴巴 ---
+                if (!eyeClosed && !isJumping) {
+                    ctx.strokeStyle = '#2a5020';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.arc(dx + 26, dy + 12, 4, 0.15 * Math.PI, 0.85 * Math.PI);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+                } else if (isJumping && !eyeClosed) {
+                    // 跳跃时张嘴
+                    ctx.fillStyle = '#2a2020';
+                    ctx.beginPath();
+                    ctx.arc(dx + 27, dy + 13, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#e05040';
+                    ctx.beginPath();
+                    ctx.arc(dx + 27, dy + 13, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // --- 鼻孔 ---
+                ctx.fillStyle = '#2a5020';
+                ctx.beginPath();
+                ctx.arc(dx + 30, dy + 2, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function drawObstacle(obs) {
+                const ox = obs.x;
+                const oy = obs.y;
+                const ow = obs.width;
+                const oh = obs.height;
+
+                ctx.save();
+
+                // 阴影
+                ctx.fillStyle = 'rgba(60,40,20,0.2)';
+                ctx.beginPath();
+                ctx.ellipse(ox + ow / 2, GROUND_Y - 1, ow * 0.4, 3, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (obs.type === 0) {
+                    // 小圆仙人掌
+                    const cx = ox + ow / 2;
+                    const cy = oy + oh / 2;
+                    const r = ow / 2 - 1;
+
+                    const cGrad = ctx.createRadialGradient(cx - 2, cy - 3, r * 0.1, cx, cy, r);
+                    cGrad.addColorStop(0, '#6dbd5a');
+                    cGrad.addColorStop(0.5, '#3d8b40');
+                    cGrad.addColorStop(1, '#2a6e2d');
+                    ctx.fillStyle = cGrad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 纹理条纹
+                    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, r - 3, -0.5, 0.5);
+                    ctx.stroke();
+                    ctx.lineWidth = 1;
+
+                    // 小刺
+                    ctx.fillStyle = '#e8e8d0';
+                    for (let a = 0; a < Math.PI * 2; a += 0.7) {
+                        const sx = cx + Math.cos(a) * (r - 1);
+                        const sy = cy + Math.sin(a) * (r - 1);
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1.3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                } else if (obs.type === 1) {
+                    // 柱状仙人掌
+                    const cGrad = ctx.createLinearGradient(ox, 0, ox + ow, 0);
+                    cGrad.addColorStop(0, '#3d8b40');
+                    cGrad.addColorStop(0.4, '#5aad4e');
+                    cGrad.addColorStop(0.7, '#3d8b40');
+                    cGrad.addColorStop(1, '#2a6e2d');
+                    ctx.fillStyle = cGrad;
+                    ctx.beginPath();
+                    ctx.roundRect(ox + 2, oy + 4, ow - 4, oh - 4, 8);
+                    ctx.fill();
+
+                    // 高光边
+                    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+                    ctx.fillRect(ox + 5, oy + 8, 5, oh - 16);
+
+                    // 刺
+                    ctx.fillStyle = '#f5f5e8';
+                    const cx = ox + ow / 2;
+                    for (let sy = oy + 10; sy < oy + oh - 6; sy += 10) {
+                        ctx.beginPath();
+                        ctx.arc(cx - 6, sy, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.arc(cx + 6, sy + 4, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                } else {
+                    // 分叉仙人掌 (saguaro风格)
+                    const cGrad = ctx.createLinearGradient(ox, 0, ox + ow, 0);
+                    cGrad.addColorStop(0, '#2e7031');
+                    cGrad.addColorStop(0.3, '#4a9e44');
+                    cGrad.addColorStop(0.6, '#3d8b40');
+                    cGrad.addColorStop(1, '#2a6e2d');
+                    ctx.fillStyle = cGrad;
+
+                    // 主干
+                    ctx.beginPath();
+                    ctx.roundRect(ox + 8, oy + 10, ow - 16, oh - 10, 7);
+                    ctx.fill();
+
+                    // 左分支
+                    ctx.beginPath();
+                    ctx.roundRect(ox + 2, oy + 16, 10, oh - 24, 6);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.roundRect(ox - 1, oy + 18, 10, 14, 5);
+                    ctx.fill();
+                    // 左上小臂
+                    ctx.fillStyle = '#4a9e44';
+                    ctx.beginPath();
+                    ctx.roundRect(ox + 2, oy + 14, 8, 8, 4);
+                    ctx.fill();
+                    ctx.fillStyle = cGrad;
+
+                    // 右分支
+                    ctx.beginPath();
+                    ctx.roundRect(ox + ow - 12, oy + 20, 10, oh - 30, 6);
+                    ctx.fill();
+                    ctx.beginPath();
+                    ctx.roundRect(ox + ow - 13, oy + 22, 10, 12, 5);
+                    ctx.fill();
+                    ctx.fillStyle = '#4a9e44';
+                    ctx.beginPath();
+                    ctx.roundRect(ox + ow - 12, oy + 18, 8, 8, 4);
+                    ctx.fill();
+
+                    // 刺
+                    ctx.fillStyle = '#f5f5e8';
+                    [
+                        [ox + ow / 2, oy + 14],
+                        [ox + ow / 2, oy + 26],
+                        [ox + ow / 2, oy + 36],
+                        [ox + 6, oy + 20],
+                        [ox + ow - 6, oy + 26]
+                    ].forEach(([sx, sy]) => {
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, 1.6, 0, Math.PI * 2);
+                        ctx.fill();
+                    });
+                }
+
+                ctx.restore();
+            }
+
+            function drawDust() {
+                dustParticles.forEach(dp => {
+                    const alpha = dp.life / dp.maxLife;
+                    ctx.fillStyle = `rgba(190,170,140,${alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(dp.x, dp.y, dp.size * alpha, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            }
+
+            function drawScoreOnCanvas() {
+                // 分数背景
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                ctx.beginPath();
+                ctx.roundRect(canvas.width - 115, 10, 100, 38, 20);
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`🏆 ${Math.floor(score)}`, canvas.width - 65, 36);
+                ctx.textAlign = 'start';
+            }
+
+            function drawGameOverText() {
+                if (!gameOverFlag) return;
+                // 半透明遮罩
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 38px "Segoe UI","PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0,0,0,0.5)';
+                ctx.shadowBlur = 10;
+                ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2 - 15);
+                ctx.shadowBlur = 0;
+                ctx.font = '16px "PingFang SC","Microsoft YaHei",sans-serif';
+                ctx.fillStyle = '#ffe0a0';
+                ctx.fillText('点击画面或按空格重新开始', canvas.width / 2, canvas.height / 2 + 30);
+                ctx.textAlign = 'start';
+            }
+
+            // ==================== 主绘制 ====================
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawSky();
+                drawSun();
+                drawFarHills();
+                drawClouds();
+                drawGround();
+                drawDinoShadow();
+                obstacles.forEach(obs => drawObstacle(obs));
+                drawDino();
+                drawDust();
+                drawScoreOnCanvas();
+                drawGameOverText();
+            }
+
+            // ==================== 输入处理 ====================
+            function jump() {
+                if (!gameRunning) return;
+                if (!isJumping && dinoY >= GROUND_Y - DINO_H - 1) {
+                    isJumping = true;
+                    dinoYVelocity = JUMP_POWER;
+                    sfxJump();
+                    spawnDust(dinoX + DINO_W / 2, GROUND_Y - 2, 6);
+                }
+            }
+
+            function handleKeydown(e) {
+                const key = e.key;
+                if (key === 'ArrowUp' || key === ' ' || key === 'Space') {
+                    e.preventDefault();
+                    if (gameOverFlag) resetGame();
+                    else jump();
+                }
+                if (key === 'r' || key === 'R') {
+                    e.preventDefault();
+                    resetGame();
+                }
+            }
+
+            function handleCanvasClick(e) {
+                e.preventDefault();
+                initAudio();
+                if (gameOverFlag) resetGame();
+                else jump();
+            }
+
+            function handleTouchStart(e) {
+                e.preventDefault();
+                initAudio();
+                if (gameOverFlag) resetGame();
+                else jump();
+            }
+
+            // ==================== roundRect polyfill ====================
+            if (!CanvasRenderingContext2D.prototype.roundRect) {
+                CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                    if (w < 2 * r) r = w / 2;
+                    if (h < 2 * r) r = h / 2;
+                    this.moveTo(x + r, y);
+                    this.lineTo(x + w - r, y);
+                    this.quadraticCurveTo(x + w, y, x + w, y + r);
+                    this.lineTo(x + w, y + h - r);
+                    this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                    this.lineTo(x + r, y + h);
+                    this.quadraticCurveTo(x, y + h, x, y + h - r);
+                    this.lineTo(x, y + r);
+                    this.quadraticCurveTo(x, y, x + r, y);
+                    this.closePath();
+                    return this;
+                };
+            }
+
+            // ==================== 游戏循环 ====================
+            function gameLoop() {
+                updateGame();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            // ==================== 事件绑定 ====================
+            function bindEvents() {
+                window.addEventListener('keydown', handleKeydown);
+                canvas.addEventListener('click', handleCanvasClick);
+                canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+                document.getElementById('restartButton').addEventListener('click', () => resetGame());
+                soundToggleBtn.addEventListener('click', toggleSound);
+            }
+
+            function enableAudioOnFirstTap() {
+                const resume = () => {
+                    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume().catch(e => {});
+                    document.body.removeEventListener('touchstart', resume);
+                    document.body.removeEventListener('click', resume);
+                };
+                document.body.addEventListener('touchstart', resume, { once: true });
+                document.body.addEventListener('click', resume, { once: true });
+            }
+
+            // ==================== 初始化 ====================
+            function init() {
+                initAudio();
+                bindEvents();
+                resetGame();
+                gameLoop();
+                enableAudioOnFirstTap();
+                soundToggleBtn.innerHTML = '🔊 音效';
+                soundEnabled = true;
+            }
+
+            init();
+            console.log('🦖 可爱恐龙跑酷已就绪！');
+            console.log('  - 空格/↑ 跳跃 | 点击画面跳跃');
+            console.log('  - 踩到障碍物游戏结束');
+            console.log('  - 得分越高速度越快');
+        })();
+    </script>
+</body>
+</html>

@@ -3,169 +3,574 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>经典小游戏</title>
+    <title>经典小游戏 · 实用工具合集</title>
     <style>
-        *{
-            margin:0;
-            padding:0;
-            box-sizing:border-box;
+        :root {
+            --bg: #f0f4f8;
+            --card: #ffffff;
+            --text: #1a202c;
+            --text-secondary: #5a6072;
+            --text-muted: #8b919e;
+            --border: #e2e6ed;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.10), 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius-sm: 8px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+            /* 三套主题色 */
+            --game-primary: #ff6b6b;
+            --game-light: #fff0f0;
+            --game-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            --tool-primary: #4a90d9;
+            --tool-light: #eef6ff;
+            --tool-gradient: linear-gradient(135deg, #4a90d9, #5b8def);
+            --puzzle-primary: #3da06d;
+            --puzzle-light: #eafaf1;
+            --puzzle-gradient: linear-gradient(135deg, #3da06d, #2ecc71);
         }
-        body{
-            font-family: Microsoft YaHei, sans-serif;
-            background:#f0f2f5;
-            font-size:16px;
-            padding:10px;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
-        .container{
-            max-width:600px;
-            margin:0 auto;
-            background:#fff;
-            padding:18px 14px;
-            border-radius:10px;
-            box-shadow:0 0 8px rgba(0,0,0,0.1);
-        }
-        h2{
-            color:#1a202c;
-            border-bottom:1px solid #eee;
-            padding-bottom:12px;
-            font-size:24px;
-            font-weight:bold;
-            text-align:center;
-        }
-        .pagination{
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+            background: linear-gradient(160deg, #e9eef5 0%, #dce3ed 25%, #eef2f7 50%, #e3e9f1 75%, #f0f4f8 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            padding: 14px;
             display: flex;
             justify-content: center;
-            gap:8px;
-            margin:14px 0;
+            align-items: flex-start;
         }
-        .pagination button{
-            padding:8px 14px;
-            border:none;
-            border-radius:6px;
-            background:#f1f3f5;
-            font-size:16px;
-            color:#333;
+
+        .container {
+            width: 100%;
+            max-width: 560px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 22px 18px 24px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .header .icon-row {
+            font-size: 2.6rem;
+            margin-bottom: 4px;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-6px);
+            }
+        }
+        .header h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #1a202c, #4a5568, #2d3748);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+        .header .subtitle {
+            font-size: 0.7rem;
+            color: #8b919e;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            margin-top: 2px;
+        }
+
+        /* 分页标签 */
+        .tab-bar {
+            display: flex;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.04);
+            border-radius: 16px;
+            padding: 5px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+        .tab-bar button {
+            flex: 1;
+            padding: 12px 14px;
+            border: none;
+            border-radius: 12px;
+            background: transparent;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #5a6072;
             cursor: pointer;
+            transition: all var(--transition);
+            font-family: inherit;
+            letter-spacing: 0.02em;
+            position: relative;
+            z-index: 1;
+            white-space: nowrap;
         }
-        .pagination button.active{
-            background:#1677ff;
-            color:#fff;
+        .tab-bar button.active {
+            background: #fff;
+            color: #1a202c;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+            font-weight: 700;
         }
-        ul{list-style:none;}
-        li{margin:10px 0;}
-        a{
-            display:block;
-            padding:16px;
-            color:#fff;
-            text-decoration:none;
-            border-radius:8px;
-            text-align:center;
+        .tab-bar button:hover:not(.active) {
+            color: #3a4050;
+            background: rgba(255, 255, 255, 0.4);
         }
-        a:hover{opacity:0.9;}
-
-        /* ———————— 每个按钮独立设置：颜色、大小、文字样式 ———————— */
-        /* 游戏页按钮 */
-        #p1 a {
-            background: #ffccff;
-            opacity: 0.7;
-            font-size: 18px;     /* 文字大小 */
-            color: #330000;      /* 文字颜色 */
-            font-weight: 500;    /*bold;    /* 文字加粗 */
+        .tab-bar .tab-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-right: 6px;
+            vertical-align: middle;
+            position: relative;
+            top: -1px;
         }
-        /* 工具页按钮 */
-        #p2 a {
-            background: #ccffff;
-            opacity: 0.9;
-            font-size: 18px;     /* 文字大小 */
-            color: #000033;      /* 文字颜色 */
-            font-weight: 500;    /* 常规粗细 */
+        .dot-game {
+            background: var(--game-primary);
         }
-        /* 益智页按钮 */
-        #p3 a {
-            background: #ccffcc;
-            opacity: 0.9;
-            font-size: 18px;     /* 文字大小 */
-            color: #003300;      /* 文字颜色 */
-            font-weight: 500;    /*bold;    /* 文字加粗 */
+        .dot-tool {
+            background: var(--tool-primary);
+        }
+        .dot-puzzle {
+            background: var(--puzzle-primary);
         }
 
-        /* 每页标题样式 */
-        .cat1 { color: #660000; font-size: 20px; border-left:5px solid #ff4444; background: #ffe5e5; }
-        .cat2 { color: #330066; font-size: 20px; border-left:5px solid #1677ff; background: #e5f0ff; }
-        .cat3 { color: #003333; font-size: 20px; border-left:5px solid #00C851; background: #e5ffe5; }
-
-        .category-title{
-            margin:20px 0 10px;
-            padding:8px 12px;
-            font-weight:bold;
-            border-radius:4px;
+        /* 页面 */
+        .page {
+            display: none;
+            animation: fadeSlideIn 0.35s ease;
         }
-        .page{display:none;}
-        .page.active{display:block;}
+        .page.active {
+            display: block;
+        }
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 分类标题 */
+        .category-title {
+            margin: 10px 0 12px;
+            padding: 10px 14px;
+            font-weight: 700;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            letter-spacing: 0.03em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .cat-game {
+            color: #7f1d1d;
+            background: var(--game-light);
+            border-left: 4px solid var(--game-primary);
+        }
+        .cat-tool {
+            color: #1e3a5f;
+            background: var(--tool-light);
+            border-left: 4px solid var(--tool-primary);
+        }
+        .cat-puzzle {
+            color: #14532d;
+            background: var(--puzzle-light);
+            border-left: 4px solid var(--puzzle-primary);
+        }
+
+        /* 链接卡片 */
+        .link-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .link-list li a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 15px 16px;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            background: #fff;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            border: 1.5px solid transparent;
+            position: relative;
+            overflow: hidden;
+            font-weight: 600;
+            font-size:0.95rem;
+            letter-spacing: 0.02em;
+            text-align: left;
+        }
+        .link-list li a:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: rgba(0, 0, 0, 0.06);
+        }
+        .link-list li a:active {
+            transform: scale(0.97);
+            transition: transform 0.08s ease;
+        }
+
+        /* 各分类链接的左侧色条 + 悬停色 */
+        .page-game .link-list li a {
+            border-left: 3px solid transparent;
+        }
+        .page-game .link-list li a:hover {
+            border-left-color: var(--game-primary);
+            background: #fffafa;
+        }
+        .page-tool .link-list li a {
+            border-left: 3px solid transparent;
+        }
+        .page-tool .link-list li a:hover {
+            border-left-color: var(--tool-primary);
+            background: #fafcff;
+        }
+        .page-puzzle .link-list li a {
+            border-left: 3px solid transparent;
+        }
+        .page-puzzle .link-list li a:hover {
+            border-left-color: var(--puzzle-primary);
+            background: #fafff8;
+        }
+
+        /* 图标容器 */
+        .link-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+            transition: all var(--transition);
+        }
+        .page-game .link-icon {
+            background: var(--game-light);
+            color: var(--game-primary);
+        }
+        .page-tool .link-icon {
+            background: var(--tool-light);
+            color: var(--tool-primary);
+        }
+        .page-puzzle .link-icon {
+            background: var(--puzzle-light);
+            color: var(--puzzle-primary);
+        }
+        .link-list li a:hover .link-icon {
+            transform: scale(1.08);
+        }
+
+        /* 文字区域 */
+        .link-text {
+            flex: 1;
+            min-width: 0;
+        }
+        .link-text .link-title {
+            font-weight: 700;
+            font-size: 1.0rem;
+            color: var(--text);
+            line-height: 1.3;
+        }
+
+        /* 箭头 */
+        .link-arrow {
+            color: #c0c8d4;
+            font-size: 1rem;
+            transition: all var(--transition);
+            flex-shrink: 0;
+        }
+        .link-list li a:hover .link-arrow {
+            color: #5a6072;
+            transform: translateX(3px);
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.65rem;
+            color: #b0b8c4;
+            letter-spacing: 0.04em;
+        }
+
+        /* 响应式 */
+        @media (max-width: 420px) {
+            .container {
+                padding: 14px 10px 16px;
+                border-radius: 18px;
+            }
+            .header h2 {
+                font-size: 1.3rem;
+            }
+            .header .icon-row {
+                font-size: 2rem;
+            }
+            .link-list li a {
+                padding: 12px 12px;
+                gap: 10px;
+                font-size: 0.85rem;
+            }
+            .link-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.1rem;
+                border-radius: 10px;
+            }
+            .tab-bar button {
+                padding: 10px 8px;
+                font-size: 1.1rem;
+                border-radius: 10px;
+            }
+            .tab-bar {
+                gap: 3px;
+                padding: 4px;
+                border-radius: 12px;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>经典小游戏 实用工具</h2>
-    <div class="pagination">
-        <button class="active" onclick="go(1)">游戏</button>
-        <button onclick="go(2)">工具</button>
-        <button onclick="go(3)">益智</button>
+    <div class="container" id="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="icon-row">🎯</div>
+            <h2>经典小游戏 · 实用工具</h2>
+            <div class="subtitle">页面内容由AI生成仅供参考</div>
+        </div>
+
+        <!-- 分页标签 -->
+        <div class="tab-bar" id="tabBar">
+            <button class="active" onclick="go(1)">
+                <span class="tab-dot dot-game"></span>游戏
+            </button>
+            <button onclick="go(2)">
+                <span class="tab-dot dot-tool"></span>工具
+            </button>
+            <button onclick="go(3)">
+                <span class="tab-dot dot-puzzle"></span>益智类
+            </button>
+        </div>
+
+        <!-- 游戏页 -->
+        <div class="page page-game active" id="p1">
+            <div class="category-title cat-game">🎮 休闲小游戏</div>
+            <ul class="link-list">
+                <li>
+                    <a href="超级俄罗斯.html">
+                        <span class="link-icon">🧮</span>
+                        <span class="link-text">
+                            <span class="link-title">俄罗斯方块</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="连连看.html">
+                        <span class="link-icon">🍎</span>
+                        <span class="link-text">
+                            <span class="link-title">🍒连连看🍓</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="霰弹战机.html">
+                        <span class="link-icon">🚀</span>
+                        <span class="link-text">
+                            <span class="link-title">霰弹战机</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="跳跃恐龙.html">
+                        <span class="link-icon">🦖</span>
+                        <span class="link-text">
+                            <span class="link-title">跳跃恐龙🦕</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="星际战机.html">
+                        <span class="link-icon">✈️</span>
+                        <span class="link-text">
+                            <span class="link-title">星际战机🚁</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 工具页 -->
+        <div class="page page-tool" id="p2">
+            <div class="category-title cat-tool">🛠️ 实用工具</div>
+            <ul class="link-list">
+                <li>
+                    <a href="常用色表.html">
+                        <span class="link-icon">🎨</span>
+                        <span class="link-text">
+                            <span class="link-title">常用色表</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="颜色代码表.html">
+                        <span class="link-icon">🌈</span>
+                        <span class="link-text">
+                            <span class="link-title">颜色代码大全</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="进制转换.html">
+                        <span class="link-icon">🔄</span>
+                        <span class="link-text">
+                            <span class="link-title">进制转换工具</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="单位换算.html">
+                        <span class="link-icon">📏</span>
+                        <span class="link-text">
+                            <span class="link-title">单位换算器</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="播放器.html">
+                        <span class="link-icon">🎵</span>
+                        <span class="link-text">
+                            <span class="link-title">音乐播放器</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 益智页 -->
+        <div class="page page-puzzle" id="p3">
+            <div class="category-title cat-puzzle">🧠 益智小游戏</div>
+            <ul class="link-list">
+                <li>
+                    <a href="数独.html">
+                        <span class="link-icon">📝</span>
+                        <span class="link-text">
+                            <span class="link-title">数独闯关</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="24点.html">
+                        <span class="link-icon">♠️</span>
+                        <span class="link-text">
+                            <span class="link-title">24点♠️♥️</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="连连看.html">
+                        <span class="link-icon">🔗</span>
+                        <span class="link-text">
+                            <span class="link-title">经典连连看</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="推箱子.html">
+                        <span class="link-icon">📦</span>
+                        <span class="link-text">
+                            <span class="link-title">🙋🏻‍推箱子</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+                <li>
+                    <a href=".html">
+                        <span class="link-icon">🧠</span>
+                        <span class="link-text">
+                            <span class="link-title">益智游戏</span>
+                        </span>
+                        <span class="link-arrow">›</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 页脚 -->
+        <div class="footer">💡 点击卡片即可打开对应游戏或工具</div>
     </div>
 
-    <div class="page active" id="p1">
-        <div class="category-title cat1">休闲小游戏</div>
-        <ul>
-            <li><a href="超级俄罗斯.html">超级俄罗斯</a></li>
-            <li><a href="24点_自适应.html">24点_自适应</a></li>
-            <li><a href="俄罗斯方块.html">俄罗斯方块</a></li>
-            <li><a href="扫雷.html">经典扫雷</a></li>
-        </ul>
-    </div>
+    <script>
+        let currentPage = 1;
 
-    <div class="page" id="p2">
-        <div class="category-title cat2">实用工具</div>
-        <ul>
-            <li><a href="常用色表.html">常用色表</a></li>
-            <li><a href="颜色代码表.html">颜色代码大全</a></li>
-            <li><a href="进制转换.html">进制转换工具</a></li>
-            <li><a href="单位换算.html">单位换算器</a></li>
-            <li><a href="播放器.html">本地音乐播放器</a></li>
-        </ul>
-    </div>
+        function go(n) {
+            currentPage = n;
+            // 切换页面
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('p' + n).classList.add('active');
+            // 切换标签
+            const tabBar = document.getElementById('tabBar');
+            tabBar.querySelectorAll('button').forEach((b, i) => {
+                b.classList.toggle('active', i === n - 1);
+            });
+        }
 
-    <div class="page" id="p3">
-        <div class="category-title cat3">益智小游戏</div>
-        <ul>
-            <li><a href="数独.html">数独闯关</a></li>
-            <li><a href="拼图.html">趣味拼图</a></li>
-            <li><a href="连连看.html">经典连连看</a></li>
-        </ul>
-    </div>
-</div>
-
-<script>
-let currentPage = 1;
-function go(n){
-    currentPage = n;
-    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-    document.querySelectorAll('.pagination button').forEach(b=>b.classList.remove('active'));
-    document.getElementById('p'+n).classList.add('active');
-    document.querySelectorAll('.pagination button')[n-1].classList.add('active');
-}
-
-// 滑动切换
-let startX = 0;
-document.querySelector('.container').addEventListener('touchstart', e=>{
-    startX = e.touches[0].clientX;
-});
-document.querySelector('.container').addEventListener('touchend', e=>{
-    let diff = e.changedTouches[0].clientX - startX;
-    if(Math.abs(diff) > 50){
-        if(diff>0 && currentPage>1) go(currentPage-1);
-        if(diff<0 && currentPage<3) go(currentPage+1);
-    }
-});
-</script>
+        // 滑动切换
+        let startX = 0;
+        const container = document.getElementById('container');
+        container.addEventListener('touchstart', e => {
+            startX = e.touches[0].clientX;
+        });
+        container.addEventListener('touchend', e => {
+            let diff = e.changedTouches[0].clientX - startX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0 && currentPage > 1) go(currentPage - 1);
+                if (diff < 0 && currentPage < 3) go(currentPage + 1);
+            }
+        });
+    </script>
 </body>
 </html>

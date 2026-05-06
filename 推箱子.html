@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>推箱子</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #2c5e4a, #0f2f22);
+            font-family: 'Segoe UI', 'Poppins', system-ui, '微软雅黑', sans-serif;
+            padding: 16px 12px;
+        }
+
+        .game-card {
+            background: rgba(22, 35, 28, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 44px;
+            padding: 16px 16px 22px;
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid rgba(255, 215, 140, 0.25);
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            background: linear-gradient(135deg, #F9E7B3, #F7BC45);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        h1::before { content: "🧩"; font-size: 1.3rem; background: none; -webkit-background-clip: unset; color: #f7c873; }
+        h1::after { content: "🎯"; font-size: 1.3rem; background: none; -webkit-background-clip: unset; color: #f7c873; }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(6px);
+            border-radius: 60px;
+            padding: 4px 16px;
+            margin-bottom: 14px;
+            gap: 16px;
+            flex-wrap: nowrap;
+            border: 1px solid rgba(255, 220, 140, 0.25);
+            white-space: nowrap;
+        }
+
+        .stat-item {
+            background: #1f2a25cc;
+            padding: 2px 14px;
+            border-radius: 50px;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            font-weight: 600;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            white-space: nowrap;
+        }
+        .stat-icon { font-size: 0.9rem; }
+        .stat-label { color: #d9d0a5; font-size: 0.75rem; letter-spacing: 0.5px; }
+        .stat-number { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            color: #FFE6A3; 
+            line-height: 1; 
+            margin-left: 2px; 
+            text-shadow: 0 1px 2px #00000030;
+        }
+        .level-sep { font-size: 0.9rem; color: #bdad7a; margin: 0 2px; }
+
+        .level-selector {
+            background: #1f2a25cc;
+            border-radius: 50px;
+            padding: 2px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(4px);
+        }
+        .level-selector label {
+            color: #d9d0a5;
+            font-size: 0.8rem;
+        }
+        #levelSelect {
+            background: #0f1915;
+            border: none;
+            color: #FFE6A3;
+            font-weight: bold;
+            font-size: 1rem;
+            padding: 4px 8px;
+            border-radius: 40px;
+            outline: none;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        #gameBox {
+            display: grid;
+            background: #d6c394;
+            border-radius: 24px;
+            box-shadow: inset 0 0 0 2px #fff3cf, 0 12px 20px rgba(0, 0, 0, 0.4);
+            margin-bottom: 16px;
+            justify-content: center;
+            gap: 0;
+            padding: 0;
+        }
+
+        .cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fcf3df;
+            transition: transform 0.05s linear, background 0.1s;
+            border: 1px solid #bea878;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 2rem;
+            min-width: 52px;
+        }
+
+        @media (max-width: 560px) {
+            .cell { min-width: 48px; font-size: 1.8rem; }
+        }
+        @media (max-width: 480px) {
+            .cell { min-width: 46px; font-size: 1.7rem; }
+        }
+        @media (max-width: 420px) {
+            .cell { min-width: 44px; font-size: 1.6rem; }
+        }
+        @media (max-width: 380px) {
+            .cell { min-width: 40px; font-size: 1.4rem; }
+        }
+
+        .wall {
+            background: #5b4b3a;
+            border-color: #3f2f20;
+            background-image: radial-gradient(circle at 35% 40%, #7d6248 15%, transparent 18%);
+            background-size: 10px 10px;
+            box-shadow: inset 0 0 0 1px #6b5a48;
+        }
+        .target {
+            background: #FFE2A4;
+            border-color: #FFB347;
+            box-shadow: inset 0 0 0 1px #ffe19e, 0 0 4px rgba(255, 180, 70, 0.5);
+        }
+
+        .dpad-area {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        #ctrl {
+            display: grid;
+            grid-template-rows: auto auto;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 16px;
+            border-radius: 80px;
+            backdrop-filter: blur(6px);
+            width: fit-content;
+            margin: 0 auto;
+        }
+        #btnUp {
+            grid-column: 1 / 4;
+            justify-self: center;
+            width: 76px;
+            margin-bottom: 2px;
+        }
+        #btnLeft, #btnDown, #btnRight {
+            width: 76px;
+            justify-self: center;
+        }
+        #ctrl button {
+            height: 66px;
+            font-size: 32px;
+            border: none;
+            border-radius: 55px;
+            background: #2f4239;
+            color: #FFF4D2;
+            cursor: pointer;
+            transition: all 0.08s linear;
+            box-shadow: 0 5px 0 #17241e;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+        #ctrl button:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #17241e;
+        }
+        #btnUp { background: #E68A2E; box-shadow: 0 5px 0 #b45f1b; }
+        #btnLeft, #btnRight, #btnDown { background: #3b5a4e; box-shadow: 0 5px 0 #1d352b; }
+
+        @media (max-width: 560px) {
+            #ctrl button { height: 60px; font-size: 30px; }
+            #btnUp, #btnLeft, #btnDown, #btnRight { width: 68px; }
+        }
+        @media (max-width: 480px) {
+            #ctrl button { height: 54px; font-size: 28px; }
+            #btnUp, #btnLeft, #btnDown, #btnRight { width: 62px; }
+            .stat-number { font-size: 1rem; }
+            .stat-label { font-size: 0.7rem; }
+        }
+        @media (max-width: 420px) {
+            #ctrl button { height: 50px; font-size: 26px; }
+            #btnUp, #btnLeft, #btnDown, #btnRight { width: 56px; }
+            .stat-number { font-size: 0.9rem; }
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .btn {
+            background: #2d3a34;
+            border: none;
+            color: #fef2cf;
+            font-weight: 600;
+            padding: 8px 22px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.08s ease;
+            box-shadow: 0 3px 0 #1a251f;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: 0.5px;
+        }
+        .btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #1a251f;
+        }
+        .btn-primary {
+            background: #e67e22;
+            color: white;
+            box-shadow: 0 3px 0 #b45f1b;
+        }
+        .sound-btn {
+            background: #4f6b5a;
+            box-shadow: 0 3px 0 #2c4035;
+        }
+        .sound-btn.off {
+            background: #846554;
+            opacity: 0.9;
+            box-shadow: 0 3px 0 #583e31;
+        }
+
+        .toast-msg {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2a23e6;
+            backdrop-filter: blur(10px);
+            color: #FDE6A7;
+            padding: 6px 20px;
+            border-radius: 60px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            z-index: 200;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+            border: 1px solid #ffda88;
+        }
+
+        footer {
+            font-size: 0.6rem;
+            text-align: center;
+            margin-top: 14px;
+            color: #cfebdd;
+            opacity: 0.7;
+            letter-spacing: 0.3px;
+        }
+    </style>
+</head>
+<body>
+<div class="game-card">
+    <h1>推箱子 · 九重阁</h1>
+
+    <div class="stats-row">
+        <div class="stat-item">
+            <span class="stat-icon">🚶</span>
+            <span class="stat-label">步数</span>
+            <span class="stat-number" id="stepValue">0</span>
+        </div>
+        <div class="level-selector">
+            <label>🎮</label>
+            <select id="levelSelect"></select>
+        </div>
+    </div>
+
+    <div id="gameBox"></div>
+
+    <div class="dpad-area">
+        <div id="ctrl">
+            <button id="btnUp">▲</button>
+            <button id="btnLeft">◀</button>
+            <button id="btnDown">▼</button>
+            <button id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button id="soundToggleBtn" class="btn sound-btn">🎵 音效 ON</button>
+        <button id="restartBtn" class="btn">🔄 重来</button>
+    </div>
+    <footer>⭐ 推至星标 | 胜利自动跳关 | 下拉直接选关 ⭐</footer>
+</div>
+<div id="toastMsg" class="toast-msg" style="opacity:0;"></div>
+
+<script>
+    // ======================= 9个平衡关卡 (箱子数 = 星标数) =======================
+    const LEVELS_DATA = [
+        { map: [[1,1,1,1,1,1,1],[1,0,0,0,0,0,1],[1,0,3,4,4,0,1],[1,0,0,4,2,0,1],[1,0,0,2,2,0,1],[1,0,0,0,0,0,1],[1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1],[1,0,0,0,0,0,0,1],[1,0,3,0,4,0,0,1],[1,0,0,4,4,0,0,1],[1,0,0,0,0,2,0,1],[1,0,0,2,0,2,0,1],[1,0,0,0,0,0,0,1],[1,1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,0,1],[1,0,0,0,1,0,4,0,1],[1,0,3,4,0,4,0,0,1],[1,0,0,0,0,0,0,0,1],[1,1,1,2,1,2,1,2,1],[1,1,1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1,1],[1,2,0,0,0,0,0,2,1],[1,0,4,0,1,0,4,0,1],[1,0,0,0,0,0,0,0,1],[1,0,1,0,3,0,1,0,1],[1,0,0,0,0,0,0,0,1],[1,0,4,0,1,0,4,0,1],[1,2,0,0,0,0,0,2,1],[1,1,1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1],[1,2,0,0,0,0,0,1],[1,0,4,0,1,0,0,1],[1,0,3,4,0,4,0,1],[1,0,0,0,0,0,0,1],[1,0,0,2,0,1,0,1],[1,0,2,0,0,0,0,1],[1,1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,2,0,0,0,1],[1,0,4,0,0,0,4,0,1],[1,0,0,0,1,0,0,0,1],[1,2,0,0,3,0,0,2,1],[1,0,0,0,1,0,0,0,1],[1,0,4,0,0,0,4,0,1],[1,0,0,0,2,0,0,0,1],[1,1,1,1,1,1,1,1,1]] },
+        { map: [[1,1,1,1,1,1,1,1,1],[1,0,0,0,1,0,0,0,1],[1,0,4,0,0,0,4,0,1],[1,0,0,3,0,0,0,0,1],[1,0,1,0,0,0,1,0,1],[1,0,2,0,4,0,2,0,1],[1,0,0,1,0,1,0,0,1],[1,0,0,2,0,0,0,0,1],[1,1,1,1,1,1,1,1,1]] },
+        { map: [
+            [1,1,1,1,1,1,1,1,1],
+            [1,2,0,0,0,0,0,2,1],
+            [1,0,4,0,1,0,4,0,1],
+            [1,0,0,0,0,0,0,0,1],
+            [1,0,1,0,3,0,1,2,1],
+            [1,0,0,0,0,0,0,0,1],
+            [1,0,4,0,1,0,4,0,1],
+            [1,2,0,0,0,0,0,2,1],
+            [1,1,1,1,1,1,1,1,1]
+        ] },
+        { map: [
+            [1,1,1,1,1,1,1,1,1],
+            [1,0,0,2,0,2,0,0,1],
+            [1,0,4,0,0,0,4,0,1],
+            [1,2,0,0,0,0,0,2,1],
+            [1,0,0,1,3,1,0,0,1],
+            [1,2,0,0,0,0,0,2,1],
+            [1,0,4,0,0,0,4,0,1],
+            [1,0,0,2,0,2,0,0,1],
+            [1,1,1,1,1,1,1,1,1]
+        ] }
+    ];
+
+    const TOTAL_LEVELS = LEVELS_DATA.length;
+    let currentLevelIdx = 0, currentMap = [], playerX = -1, playerY = -1;
+    let stepCount = 0, isGameWin = false, autoTimer = null;
+    let soundEnabled = true, audioCtx = null;
+
+    const gameBox = document.getElementById('gameBox');
+    const stepSpan = document.getElementById('stepValue');
+    const levelSelect = document.getElementById('levelSelect');
+    const restartBtn = document.getElementById('restartBtn');
+    const soundToggleBtn = document.getElementById('soundToggleBtn');
+    const toastDiv = document.getElementById('toastMsg');
+
+    function initLevelSelect() {
+        levelSelect.innerHTML = '';
+        for (let i = 0; i < TOTAL_LEVELS; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = `第 ${i+1} 关`;
+            levelSelect.appendChild(option);
+        }
+        levelSelect.value = currentLevelIdx;
+    }
+
+    function initAudio() { if (!audioCtx) try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} }
+    function playSound(type) {
+        if (!soundEnabled) return;
+        if (!audioCtx) initAudio();
+        if (!audioCtx) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume().then(() => actuallyPlay(type)).catch(e=>{});
+        else actuallyPlay(type);
+    }
+    function actuallyPlay(type) {
+        if (!audioCtx) return;
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        switch(type) {
+            case 'move': osc.frequency.value=860; gain.gain.setValueAtTime(0.16, now); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.1); osc.start(now); osc.stop(now+0.1); break;
+            case 'push': osc.frequency.value=360; gain.gain.setValueAtTime(0.22, now); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.16); osc.start(now); osc.stop(now+0.16); break;
+            case 'win':
+                osc.frequency.value=523.25; gain.gain.setValueAtTime(0.28, now); gain.gain.exponentialRampToValueAtTime(0.0001, now+0.35); osc.start(now); osc.stop(now+0.35);
+                const osc2=audioCtx.createOscillator(), gain2=audioCtx.createGain();
+                osc2.connect(gain2); gain2.connect(audioCtx.destination);
+                osc2.frequency.value=1046.5; gain2.gain.setValueAtTime(0.12, now); gain2.gain.exponentialRampToValueAtTime(0.0001, now+0.28); osc2.start(now); osc2.stop(now+0.28);
+                break;
+        }
+    }
+
+    function setSoundEnabled(enabled) {
+        soundEnabled = enabled;
+        soundToggleBtn.innerHTML = soundEnabled ? "🎵 音效 ON" : "🔇 音效 OFF";
+        if(soundEnabled) soundToggleBtn.classList.remove('off'); else soundToggleBtn.classList.add('off');
+        showToast(soundEnabled ? "音效开启" : "音效关闭", 600);
+    }
+    function toggleSound() { setSoundEnabled(!soundEnabled); if(soundEnabled && audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
+    function showToast(msg, d=800) { toastDiv.innerText=msg; toastDiv.style.opacity='1'; setTimeout(()=>toastDiv.style.opacity='0', d); }
+
+    function deepCopy(map) { return map.map(r=>[...r]); }
+
+    function loadLevel(idx) {
+        idx = Math.min(Math.max(0, idx), TOTAL_LEVELS-1);
+        currentLevelIdx = idx;
+        currentMap = deepCopy(LEVELS_DATA[currentLevelIdx].map);
+        playerX = playerY = -1;
+        for(let i=0;i<currentMap.length;i++) for(let j=0;j<currentMap[i].length;j++) if(currentMap[i][j]===3 || currentMap[i][j]===6) { playerY=i; playerX=j; break; }
+        stepCount = 0; isGameWin = false;
+        if(autoTimer) clearTimeout(autoTimer);
+        if (levelSelect) levelSelect.value = currentLevelIdx;
+        updateUI(); renderMap();
+    }
+    function updateUI() { stepSpan.innerText = stepCount; }
+    function renderMap() {
+        if(!currentMap.length) return;
+        const rows = currentMap.length;
+        const cols = currentMap[0].length;
+        gameBox.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+        gameBox.innerHTML = '';
+        for(let y=0; y<rows; y++) {
+            for(let x=0; x<cols; x++) {
+                const val = currentMap[y][x];
+                const cell = document.createElement('div'); cell.className = 'cell';
+                if(val===1) cell.classList.add('wall');
+                else if(val===2||val===5||val===6) cell.classList.add('target');
+                if(val===3||val===6) cell.innerText='⛹️';
+                else if(val===4||val===5) cell.innerText='📦';
+                else if(val===2) { cell.innerText='⭐'; cell.style.fontSize='1.5rem'; cell.style.color='#e6a422'; }
+                else cell.innerText = '';
+                gameBox.appendChild(cell);
+            }
+        }
+    }
+
+    function checkVictory() { for(let row of currentMap) if(row.some(v=>v===4)) return false; return true; }
+    function handleWin() {
+        if(isGameWin) return;
+        isGameWin = true;
+        playSound('win');
+        showToast(`✨ 通关！步数 ${stepCount} ✨`, 1300);
+        if(autoTimer) clearTimeout(autoTimer);
+        autoTimer = setTimeout(() => {
+            if(currentLevelIdx+1 < TOTAL_LEVELS) {
+                currentLevelIdx++;
+                loadLevel(currentLevelIdx);
+                showToast(`自动进入第 ${currentLevelIdx+1} 关`, 800);
+            } else {
+                showToast(`🏆 全通关！ ${TOTAL_LEVELS} 关 🏆`, 1800);
+            }
+        }, 1100);
+    }
+
+    function tryMove(dx, dy) {
+        if(isGameWin) { showToast("胜利跳关中", 500); return false; }
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        const nx = playerX+dx, ny = playerY+dy;
+        if(ny<0||ny>=currentMap.length||nx<0||nx>=currentMap[0].length) return false;
+        if(currentMap[ny][nx]===1) return false;
+        const target = currentMap[ny][nx];
+        let isPush = false;
+        if(target===4 || target===5) {
+            const px = nx+dx, py = ny+dy;
+            if(py<0||py>=currentMap.length||px<0||px>=currentMap[0].length) return false;
+            const beyond = currentMap[py][px];
+            if(beyond===1||beyond===4||beyond===5||beyond===3||beyond===6) return false;
+            isPush = true;
+            const isNewTarget = (beyond===2);
+            currentMap[py][px] = isNewTarget ? 5 : 4;
+            const wasBoxOnTarget = (currentMap[ny][nx]===5);
+            const oldPlayerOnTarget = (currentMap[playerY][playerX]===6);
+            currentMap[playerY][playerX] = oldPlayerOnTarget ? 2 : 0;
+            currentMap[ny][nx] = wasBoxOnTarget ? 6 : 3;
+            playerX=nx; playerY=ny;
+            stepCount++;
+            updateUI();
+            playSound('push');
+            renderMap();
+            if(checkVictory()) handleWin();
+            return true;
+        }
+        if(target !==1 && target!==4 && target!==5 && target!==3 && target!==6) {
+            const oldOnTarget = (currentMap[playerY][playerX]===6);
+            currentMap[playerY][playerX] = oldOnTarget ? 2 : 0;
+            const newIsTarget = (target===2);
+            currentMap[ny][nx] = newIsTarget ? 6 : 3;
+            playerX=nx; playerY=ny;
+            stepCount++;
+            updateUI();
+            playSound('move');
+            renderMap();
+            if(checkVictory()) handleWin();
+            return true;
+        }
+        return false;
+    }
+
+    function restartGame() { if(autoTimer) clearTimeout(autoTimer); isGameWin=false; loadLevel(currentLevelIdx); showToast("重置关卡", 600); }
+    function onLevelSelect() {
+        const newIdx = parseInt(levelSelect.value, 10);
+        if (!isNaN(newIdx) && newIdx !== currentLevelIdx) {
+            if(autoTimer) clearTimeout(autoTimer);
+            isGameWin = false;
+            loadLevel(newIdx);
+            showToast(`跳转到第 ${newIdx+1} 关`, 600);
+        }
+    }
+    function enableAudio() { if(!audioCtx) initAudio(); if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); }
+
+    function bindEvents() {
+        document.getElementById('btnUp').onclick = (e)=>{ e.preventDefault(); enableAudio(); tryMove(0,-1); };
+        document.getElementById('btnDown').onclick = (e)=>{ e.preventDefault(); enableAudio(); tryMove(0,1); };
+        document.getElementById('btnLeft').onclick = (e)=>{ e.preventDefault(); enableAudio(); tryMove(-1,0); };
+        document.getElementById('btnRight').onclick = (e)=>{ e.preventDefault(); enableAudio(); tryMove(1,0); };
+        restartBtn.onclick = ()=>{ enableAudio(); restartGame(); };
+        soundToggleBtn.onclick = ()=> toggleSound();
+        levelSelect.addEventListener('change', onLevelSelect);
+        window.addEventListener('keydown', (e)=>{
+            if(e.key==='ArrowUp') { e.preventDefault(); tryMove(0,-1); }
+            else if(e.key==='ArrowDown') { e.preventDefault(); tryMove(0,1); }
+            else if(e.key==='ArrowLeft') { e.preventDefault(); tryMove(-1,0); }
+            else if(e.key==='ArrowRight') { e.preventDefault(); tryMove(1,0); }
+            else if(e.key==='r'||e.key==='R') restartGame();
+        });
+        document.body.addEventListener('touchstart', ()=>{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }, { once: true });
+        document.body.addEventListener('click', ()=>{ if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); }, { once: true });
+    }
+
+    function init() {
+        initLevelSelect();
+        loadLevel(0);
+        bindEvents();
+        setSoundEnabled(true);
+        initAudio();
+    }
+    init();
+</script>
+</body>
+</html>
