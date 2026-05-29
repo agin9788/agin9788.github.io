@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>智能单位换算器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(145deg, #e9f0f5 0%, #dce5ed 100%);
+            min-height: 100vh;
+            padding: 20px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .converter-card {
+            max-width: 650px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(16px);
+            border-radius: 48px;
+            padding: 28px 20px 36px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(135deg, #1e2f4b, #2b4f6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .sub {
+            text-align: center;
+            color: #5c6f8c;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 28px;
+            border-bottom: 1px solid #cbd6e6;
+            padding-bottom: 12px;
+        }
+
+        /* 分类标签 */
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 28px;
+        }
+        .cat-btn {
+            background: rgba(230, 240, 250, 0.8);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2c4c6e;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .cat-btn.active {
+            background: #2c6e9e;
+            color: white;
+            box-shadow: 0 5px 12px rgba(44,110,158,0.3);
+        }
+
+        /* 面板动画 */
+        .panel {
+            display: none;
+            animation: fadeIn 0.2s ease;
+        }
+        .panel.active-panel {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 美化后的下拉菜单样式 — 手机端更友好 */
+        .input-group {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #ffffffcc;
+            border-radius: 60px;
+            padding: 6px 6px 6px 20px;
+            border: 1px solid rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            flex: 2;
+            min-width: 130px;
+            background: transparent;
+            border: none;
+            padding: 16px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            outline: none;
+            font-family: monospace;
+            color: #1a2c3e;
+        }
+        /* 定制 select 样式：移除默认箭头，增加内边距，可点区域更大 */
+        .custom-select {
+            background: #eef3fc;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1f3b54;
+            cursor: pointer;
+            font-family: inherit;
+            /* 移除原生样式，自定义箭头 */
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23365d7f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 44px;
+        }
+        /* 移动端点击时高亮反馈 */
+        .custom-select:active {
+            background-color: #e0eaf5;
+        }
+        /* 确保 select 内的选项字体也够大（部分手机支持） */
+        .custom-select option {
+            font-size: 1rem;
+            padding: 10px;
+        }
+
+        .swap-icon {
+            display: inline-flex;
+            justify-content: center;
+            cursor: pointer;
+            background: #eef2f8;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: 0.1s;
+        }
+        .swap-icon:active {
+            transform: scale(0.92);
+        }
+
+        .result-area {
+            background: #e6f0fa;
+            border-radius: 40px;
+            padding: 18px 20px;
+            margin-top: 18px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #1b4a6e;
+            border: 1px solid #cddae9;
+        }
+
+        .footer-note {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #7c8faa;
+            margin-top: 28px;
+        }
+
+        @media (max-width: 550px) {
+            .converter-card {
+                padding: 20px 16px 28px;
+            }
+            h1 { font-size: 1.7rem; }
+            .input-group {
+                flex-wrap: wrap;
+                background: transparent;
+                padding: 0;
+                gap: 12px;
+            }
+            .input-group input {
+                background: #ffffffdd;
+                border-radius: 60px;
+                padding: 14px 18px;
+                width: 100%;
+                text-align: center;
+                font-size: 1.1rem;
+            }
+            .custom-select {
+                flex: 1;
+                text-align: center;
+                padding: 12px 18px;
+                font-size: 0.95rem;
+                background-position: right 12px center;
+            }
+            .result-area {
+                font-size: 1rem;
+                padding: 14px;
+            }
+            .cat-btn {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="converter-card">
+    <h1>📐 全能单位换算器</h1>
+    <div class="sub">手机优化 · 下拉菜单大而易点</div>
+
+    <div class="category-tabs">
+        <button class="cat-btn active" data-cat="length">📏 长度</button>
+        <button class="cat-btn" data-cat="mass">⚖️ 重量</button>
+        <button class="cat-btn" data-cat="temp">🌡️ 温度</button>
+        <button class="cat-btn" data-cat="area">📐 面积</button>
+        <button class="cat-btn" data-cat="volume">🧊 体积</button>
+        <button class="cat-btn" data-cat="speed">⚡ 速度</button>
+    </div>
+
+    <!-- 长度 -->
+    <div id="panel-length" class="panel active-panel">
+        <div class="input-group"><input type="number" id="length-value" value="1" step="any"><select id="length-from" class="custom-select"><option value="meter">米(m)</option><option value="km">千米(km)</option><option value="cm" selected>厘米(cm)</option><option value="mm">毫米(mm)</option><option value="mile">英里(mile)</option><option value="yard">码(yd)</option><option value="foot">英尺(ft)</option><option value="inch">英寸(in)</option></select></div>
+        <div class="input-group"><select id="length-to" class="custom-select"><option value="meter" selected>米(m)</option><option value="km">千米(km)</option><option value="cm">厘米(cm)</option><option value="mm">毫米(mm)</option><option value="mile">英里(mile)</option><option value="yard">码(yd)</option><option value="foot">英尺(ft)</option><option value="inch">英寸(in)</option></select><div class="swap-icon" id="swap-length">🔄</div></div>
+        <div class="result-area" id="length-result">结果: --</div>
+    </div>
+
+    <!-- 重量 -->
+    <div id="panel-mass" class="panel">
+        <div class="input-group"><input type="number" id="mass-value" value="1" step="any"><select id="mass-from" class="custom-select"><option value="kg">千克(kg)</option><option value="g">克(g)</option><option value="mg">毫克(mg)</option><option value="lb">磅(lb)</option><option value="oz">盎司(oz)</option><option value="t">吨(t)</option></select></div>
+        <div class="input-group"><select id="mass-to" class="custom-select"><option value="kg">千克(kg)</option><option value="g">克(g)</option><option value="mg">毫克(mg)</option><option value="lb">磅(lb)</option><option value="oz">盎司(oz)</option><option value="t">吨(t)</option></select><div class="swap-icon" id="swap-mass">🔄</div></div>
+        <div class="result-area" id="mass-result">结果: --</div>
+    </div>
+
+    <!-- 温度 -->
+    <div id="panel-temp" class="panel">
+        <div class="input-group"><input type="number" id="temp-value" value="0" step="any"><select id="temp-from" class="custom-select"><option value="c">摄氏度(°C)</option><option value="f">华氏度(°F)</option><option value="k">开尔文(K)</option></select></div>
+        <div class="input-group"><select id="temp-to" class="custom-select"><option value="c">摄氏度(°C)</option><option value="f">华氏度(°F)</option><option value="k">开尔文(K)</option></select><div class="swap-icon" id="swap-temp">🔄</div></div>
+        <div class="result-area" id="temp-result">结果: --</div>
+    </div>
+
+    <!-- 面积 -->
+    <div id="panel-area" class="panel">
+        <div class="input-group"><input type="number" id="area-value" value="1" step="any"><select id="area-from" class="custom-select"><option value="sqm">平方米(m²)</option><option value="sqkm">平方公里(km²)</option><option value="sqcm">平方厘米(cm²)</option><option value="ha">公顷(ha)</option><option value="acre">英亩(acre)</option><option value="sqft">平方英尺(ft²)</option></select></div>
+        <div class="input-group"><select id="area-to" class="custom-select"><option value="sqm">平方米(m²)</option><option value="sqkm">平方公里(km²)</option><option value="sqcm">平方厘米(cm²)</option><option value="ha">公顷(ha)</option><option value="acre">英亩(acre)</option><option value="sqft">平方英尺(ft²)</option></select><div class="swap-icon" id="swap-area">🔄</div></div>
+        <div class="result-area" id="area-result">结果: --</div>
+    </div>
+
+    <!-- 体积 -->
+    <div id="panel-volume" class="panel">
+        <div class="input-group"><input type="number" id="volume-value" value="1" step="any"><select id="volume-from" class="custom-select"><option value="liter">升(L)</option><option value="ml">毫升(mL)</option><option value="cubic_m">立方米(m³)</option><option value="cubic_ft">立方英尺(ft³)</option><option value="gal_us">加仑(美制)</option><option value="gal_uk">加仑(英制)</option></select></div>
+        <div class="input-group"><select id="volume-to" class="custom-select"><option value="liter">升(L)</option><option value="ml">毫升(mL)</option><option value="cubic_m">立方米(m³)</option><option value="cubic_ft">立方英尺(ft³)</option><option value="gal_us">加仑(美制)</option><option value="gal_uk">加仑(英制)</option></select><div class="swap-icon" id="swap-volume">🔄</div></div>
+        <div class="result-area" id="volume-result">结果: --</div>
+    </div>
+
+    <!-- 速度 -->
+    <div id="panel-speed" class="panel">
+        <div class="input-group"><input type="number" id="speed-value" value="1" step="any"><select id="speed-from" class="custom-select"><option value="kmh">千米/时(km/h)</option><option value="ms">米/秒(m/s)</option><option value="mph">英里/时(mph)</option><option value="knot">节(kn)</option></select></div>
+        <div class="input-group"><select id="speed-to" class="custom-select"><option value="kmh">千米/时(km/h)</option><option value="ms">米/秒(m/s)</option><option value="mph">英里/时(mph)</option><option value="knot">节(kn)</option></select><div class="swap-icon" id="swap-speed">🔄</div></div>
+        <div class="result-area" id="speed-result">结果: --</div>
+    </div>
+    <div class="footer-note">✨ 实时换算 · 点击互换单位</div>
+</div>
+
+<script>
+    // 换算映射（保持不变，清爽版）
+    const lengthMap = { meter:1, km:1000, cm:0.01, mm:0.001, mile:1609.344, yard:0.9144, foot:0.3048, inch:0.0254 };
+    function convertLength() {
+        let val = parseFloat(document.getElementById('length-value').value) || 0;
+        const from = document.getElementById('length-from').value, to = document.getElementById('length-to').value;
+        const meters = val * lengthMap[from];
+        const result = meters / lengthMap[to];
+        document.getElementById('length-result').innerHTML = `📏 结果: ${result.toFixed(6).replace(/\.?0+$/, '')} ${document.getElementById('length-to').options[document.getElementById('length-to').selectedIndex].text.split('(')[0]}`;
+    }
+    function swapLength() { let a=document.getElementById('length-from'), b=document.getElementById('length-to'); let t=a.value; a.value=b.value; b.value=t; convertLength(); }
+
+    const massMap = { kg:1, g:0.001, mg:0.000001, lb:0.45359237, oz:0.028349523125, t:1000 };
+    function convertMass() { let val=parseFloat(document.getElementById('mass-value').value)||0; const from=document.getElementById('mass-from').value, to=document.getElementById('mass-to').value; const kgVal=val*massMap[from]; const result=kgVal/massMap[to]; document.getElementById('mass-result').innerHTML=`⚖️ 结果: ${result.toFixed(6)} ${document.getElementById('mass-to').options[document.getElementById('mass-to').selectedIndex].text.split('(')[0]}`; }
+    function swapMass() { let f=document.getElementById('mass-from'), t=document.getElementById('mass-to'); [f.value,t.value]=[t.value,f.value]; convertMass(); }
+
+    function convertTemp() { let val=parseFloat(document.getElementById('temp-value').value)||0; const from=document.getElementById('temp-from').value, to=document.getElementById('temp-to').value; let c; if(from==='c') c=val; else if(from==='f') c=(val-32)*5/9; else c=val-273.15; let res; if(to==='c') res=c; else if(to==='f') res=c*9/5+32; else res=c+273.15; document.getElementById('temp-result').innerHTML=`🌡️ 结果: ${res.toFixed(4)} ${document.getElementById('temp-to').options[document.getElementById('temp-to').selectedIndex].text.split('(')[0]}`; }
+    function swapTemp() { let f=document.getElementById('temp-from'), t=document.getElementById('temp-to'); [f.value,t.value]=[t.value,f.value]; convertTemp(); }
+
+    const areaMap = { sqm:1, sqkm:1e6, sqcm:0.0001, ha:10000, acre:4046.8564224, sqft:0.09290304 };
+    function convertArea() { let val=parseFloat(document.getElementById('area-value').value)||0; const from=document.getElementById('area-from').value, to=document.getElementById('area-to').value; const sqm=val*areaMap[from]; const res=sqm/areaMap[to]; document.getElementById('area-result').innerHTML=`📐 结果: ${res.toFixed(6)} ${document.getElementById('area-to').options[document.getElementById('area-to').selectedIndex].text.split('(')[0]}`; }
+    function swapArea() { let f=document.getElementById('area-from'), t=document.getElementById('area-to'); [f.value,t.value]=[t.value,f.value]; convertArea(); }
+
+    const volumeMap = { liter:1, ml:0.001, cubic_m:1000, cubic_ft:28.316846592, gal_us:3.785411784, gal_uk:4.54609 };
+    function convertVolume() { let val=parseFloat(document.getElementById('volume-value').value)||0; const from=document.getElementById('volume-from').value, to=document.getElementById('volume-to').value; const liters=val*volumeMap[from]; const res=liters/volumeMap[to]; document.getElementById('volume-result').innerHTML=`🧊 结果: ${res.toFixed(6)} ${document.getElementById('volume-to').options[document.getElementById('volume-to').selectedIndex].text.split('(')[0]}`; }
+    function swapVolume() { let f=document.getElementById('volume-from'), t=document.getElementById('volume-to'); [f.value,t.value]=[t.value,f.value]; convertVolume(); }
+
+    const speedMap = { ms:1, kmh:0.27777777777778, mph:0.44704, knot:0.51444444444 };
+    function convertSpeed() { let val=parseFloat(document.getElementById('speed-value').value)||0; const from=document.getElementById('speed-from').value, to=document.getElementById('speed-to').value; const ms=val*speedMap[from]; const res=ms/speedMap[to]; document.getElementById('speed-result').innerHTML=`⚡ 结果: ${res.toFixed(6)} ${document.getElementById('speed-to').options[document.getElementById('speed-to').selectedIndex].text.split('(')[0]}`; }
+    function swapSpeed() { let f=document.getElementById('speed-from'), t=document.getElementById('speed-to'); [f.value,t.value]=[t.value,f.value]; convertSpeed(); }
+
+    // 切换分类
+    function switchCategory(cat) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active-panel'));
+        document.getElementById(`panel-${cat}`).classList.add('active-panel');
+        document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`.cat-btn[data-cat="${cat}"]`).classList.add('active');
+        if(cat==='length') convertLength(); else if(cat==='mass') convertMass(); else if(cat==='temp') convertTemp();
+        else if(cat==='area') convertArea(); else if(cat==='volume') convertVolume(); else if(cat==='speed') convertSpeed();
+    }
+
+    // 事件绑定
+    document.getElementById('length-value').addEventListener('input', convertLength);
+    document.getElementById('length-from').addEventListener('change', convertLength);
+    document.getElementById('length-to').addEventListener('change', convertLength);
+    document.getElementById('swap-length').addEventListener('click', swapLength);
+    document.getElementById('mass-value').addEventListener('input', convertMass);
+    document.getElementById('mass-from').addEventListener('change', convertMass);
+    document.getElementById('mass-to').addEventListener('change', convertMass);
+    document.getElementById('swap-mass').addEventListener('click', swapMass);
+    document.getElementById('temp-value').addEventListener('input', convertTemp);
+    document.getElementById('temp-from').addEventListener('change', convertTemp);
+    document.getElementById('temp-to').addEventListener('change', convertTemp);
+    document.getElementById('swap-temp').addEventListener('click', swapTemp);
+    document.getElementById('area-value').addEventListener('input', convertArea);
+    document.getElementById('area-from').addEventListener('change', convertArea);
+    document.getElementById('area-to').addEventListener('change', convertArea);
+    document.getElementById('swap-area').addEventListener('click', swapArea);
+    document.getElementById('volume-value').addEventListener('input', convertVolume);
+    document.getElementById('volume-from').addEventListener('change', convertVolume);
+    document.getElementById('volume-to').addEventListener('change', convertVolume);
+    document.getElementById('swap-volume').addEventListener('click', swapVolume);
+    document.getElementById('speed-value').addEventListener('input', convertSpeed);
+    document.getElementById('speed-from').addEventListener('change', convertSpeed);
+    document.getElementById('speed-to').addEventListener('change', convertSpeed);
+    document.getElementById('swap-speed').addEventListener('click', swapSpeed);
+
+    document.querySelectorAll('.cat-btn').forEach(btn => btn.addEventListener('click', () => switchCategory(btn.getAttribute('data-cat'))));
+
+    // 默认激活长度面板（厘米->米）
+    document.getElementById('length-from').value = 'cm';
+    document.getElementById('length-to').value = 'meter';
+    convertLength();
+    switchCategory('length');
+</script>
+</body>
+</html>
