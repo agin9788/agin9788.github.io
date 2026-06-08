@@ -43,7 +43,7 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+      font-family: 'Segoe UI', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
       background: linear-gradient(145deg, #e9eef3 0%, #dce3ea 30%, #edf1f5 60%, #e2e8f0 100%);
       background-attachment: fixed;
       min-height: 100vh;
@@ -382,7 +382,9 @@
   <div class="header">
     <div class="title"><span class="icon">🧩</span>数独</div>
     <div class="stats">
-      <div class="stat-item"><span class="stat-icon">⏱️</span><span class="stat-value" id="timer">00:00</span></div>
+      <div class="stat-item" id="timerBtn" style="cursor: pointer;">
+        <span class="stat-icon">⏱️</span><span class="stat-value" id="timer">00:00</span>
+      </div>
       <div class="stat-item mistakes-warn"><span class="stat-icon">⚠️</span><span class="stat-value" id="mistakes">0</span><span style="font-size:1.0rem;">/3</span></div>
     </div>
   </div>
@@ -418,6 +420,7 @@
   </div>
 </div>
 
+<!-- 通关弹框 -->
 <div class="overlay" id="overlay" style="display:none;">
   <div class="modal">
     <div class="trophy" id="modalIcon">🏆</div>
@@ -426,8 +429,31 @@
       <div class="result-item"><div class="val" id="resultTime">00:00</div><div class="lbl">用时</div></div>
       <div class="result-item"><div class="val" id="resultMistakes">0</div><div class="lbl">错误</div></div>
       <div class="result-item"><div class="val" id="resultDiff">中等</div><div class="lbl">难度</div></div>
+      <div class="result-item"><div class="val" id="resultBestTime">--:--</div><div class="lbl">最佳用时</div></div>
     </div>
     <button id="btnPlayAgain">🎮 再来一局</button>
+  </div>
+</div>
+
+<!-- 最佳用时弹框（新增） -->
+<div class="overlay" id="bestTimeOverlay" style="display:none;">
+  <div class="modal">
+    <h2>🏆 最佳用时记录</h2>
+    <div class="result-details" style="flex-direction: column; gap: 12px; align-items: center; margin: 20px 0;">
+      <div style="display: flex; justify-content: space-between; width: 100%; max-width: 280px;">
+        <span style="font-weight: 600; color: #334155;">简单</span>
+        <span id="bestEasyTime" style="font-weight: 700; color: #0f172a; font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; font-variant-numeric: tabular-nums;">--:--</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; width: 100%; max-width: 280px;">
+        <span style="font-weight: 600; color: #334155;">中等</span>
+        <span id="bestMediumTime" style="font-weight: 700; color: #0f172a; font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; font-variant-numeric: tabular-nums;">--:--</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; width: 100%; max-width: 280px;">
+        <span style="font-weight: 600; color: #334155;">困难</span>
+        <span id="bestHardTime" style="font-weight: 700; color: #0f172a; font-family: 'SF Mono', 'Consolas', 'Monaco', monospace; font-variant-numeric: tabular-nums;">--:--</span>
+      </div>
+    </div>
+    <button id="btnCloseBestTime">关闭</button>
   </div>
 </div>
 
@@ -435,11 +461,13 @@
   (function() {
     const boardEl = document.getElementById('board');
     const timerEl = document.getElementById('timer');
+    const timerBtn = document.getElementById('timerBtn'); // 计时器容器，用于点击事件
     const mistakesEl = document.getElementById('mistakes');
     const overlayEl = document.getElementById('overlay');
     const resultTimeEl = document.getElementById('resultTime');
     const resultMistakesEl = document.getElementById('resultMistakes');
     const resultDiffEl = document.getElementById('resultDiff');
+    const resultBestTimeEl = document.getElementById('resultBestTime');
     const btnErase = document.getElementById('btnErase');
     const btnUndo = document.getElementById('btnUndo');
     const btnNotes = document.getElementById('btnNotes');
@@ -449,6 +477,14 @@
     const difficultySelector = document.getElementById('difficultySelector');
     const modalIcon = document.getElementById('modalIcon');
     const modalTitle = document.getElementById('modalTitle');
+    
+    // 最佳用时弹框相关元素
+    const bestTimeOverlay = document.getElementById('bestTimeOverlay');
+    const bestEasyTimeEl = document.getElementById('bestEasyTime');
+    const bestMediumTimeEl = document.getElementById('bestMediumTime');
+    const bestHardTimeEl = document.getElementById('bestHardTime');
+    const btnCloseBestTime = document.getElementById('btnCloseBestTime');
+    
     let audioCtx = null;
     function initAudio() {
       if (audioCtx) return;
@@ -541,6 +577,41 @@
       }
       return puz;
     }
+    // 获取最佳用时的键名
+    function getBestTimeKey(diff) {
+      return `sudoku_best_${diff}`;
+    }
+    // 获取最佳用时
+    function getBestTime(diff) {
+      const best = localStorage.getItem(getBestTimeKey(diff));
+      return best ? parseInt(best, 10) : null;
+    }
+    // 设置最佳用时
+    function setBestTime(time) {
+      localStorage.setItem(getBestTimeKey(difficulty), time.toString());
+    }
+    // 格式化时间显示
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+    // 显示最佳用时弹框
+    function showBestTimeOverlay() {
+      sfxClick();
+      // 获取所有难度的最佳用时
+      const easyBest = getBestTime('easy');
+      const mediumBest = getBestTime('medium');
+      const hardBest = getBestTime('hard');
+      
+      // 更新显示
+      bestEasyTimeEl.textContent = easyBest ? formatTime(easyBest) : '--:--';
+      bestMediumTimeEl.textContent = mediumBest ? formatTime(mediumBest) : '--:--';
+      bestHardTimeEl.textContent = hardBest ? formatTime(hardBest) : '--:--';
+      
+      // 显示弹框
+      bestTimeOverlay.style.display = 'flex';
+    }
     function initGame() {
       stopTimer(); timerSec=0; updateTimer();
       mistakes=0; updateMistakes();
@@ -555,11 +626,12 @@
       renderBoard();
       updateNumCounts();
       overlayEl.style.display='none';
+      bestTimeOverlay.style.display='none'; // 确保最佳用时弹框也隐藏
     }
     function startIfNeeded() { if(!gameStarted&&!gameComplete){gameStarted=true;startTimer();} }
     function startTimer() { stopTimer(); timerInterval=setInterval(()=>{timerSec++;updateTimer();},1000); }
     function stopTimer() { if(timerInterval){clearInterval(timerInterval);timerInterval=null;} }
-    function updateTimer() { const m=Math.floor(timerSec/60),s=timerSec%60; timerEl.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+    function updateTimer() { timerEl.textContent=formatTime(timerSec); }
     function updateMistakes() { mistakesEl.textContent=mistakes; }
     function renderBoard() {
       boardEl.innerHTML='';
@@ -689,6 +761,14 @@
       resultTimeEl.textContent=formatTime(timerSec);
       resultMistakesEl.textContent=mistakes;
       resultDiffEl.textContent=diffConfig[difficulty].label;
+      // 处理并展示最佳用时
+      const currentBest = getBestTime(difficulty);
+      if (currentBest === null || timerSec < currentBest) {
+        setBestTime(timerSec);
+        resultBestTimeEl.textContent = formatTime(timerSec);
+      } else {
+        resultBestTimeEl.textContent = formatTime(currentBest);
+      }
       modalIcon.textContent=mistakes===0?'🏆':'🎉';
       modalTitle.textContent=mistakes===0?'完美通关！':'恭喜完成！';
       overlayEl.style.display='flex';
@@ -701,17 +781,32 @@
       setTimeout(()=>{
         resultTimeEl.textContent=formatTime(timerSec);resultMistakesEl.textContent=mistakes;
         resultDiffEl.textContent=diffConfig[difficulty].label;
+        const currentBest = getBestTime(difficulty);
+        resultBestTimeEl.textContent = currentBest ? formatTime(currentBest) : '--:--';
         modalIcon.textContent='😞';modalTitle.textContent='错误过多，游戏结束';
         overlayEl.style.display='flex';
       },400);
     }
-    function formatTime(s){const m=Math.floor(s/60);return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+    // 添加计时器点击事件
+    timerBtn.onclick = showBestTimeOverlay;
     btnErase.onclick=()=>{if(selectedRow>=0&&selectedCol>=0)eraseCell(selectedRow,selectedCol);};
     btnUndo.onclick=undo;
     btnNotes.onclick=()=>{noteMode=!noteMode;updateNoteBtn();sfxClick();};
     btnHint.onclick=hint;
     btnNewGame.onclick=()=>{initGame();sfxClick();};
     btnPlayAgain.onclick=()=>{initGame();sfxClick();};
+    // 关闭最佳用时弹框
+    btnCloseBestTime.onclick = () => {
+      bestTimeOverlay.style.display = 'none';
+      sfxClick();
+    };
+    // 点击背景关闭最佳用时弹框
+    bestTimeOverlay.onclick = (e) => {
+      if (e.target === bestTimeOverlay) {
+        bestTimeOverlay.style.display = 'none';
+        sfxClick();
+      }
+    };
     document.addEventListener('click',e=>{
       const btn=e.target.closest('.num-btn');
       if(!btn||gameComplete)return;
